@@ -13,6 +13,7 @@ import math
 import os
 import re
 import sys
+import textwrap
 from datetime import datetime, timezone
 
 LOGIN = os.environ.get("FICHA_LOGIN", "chkawan")
@@ -34,6 +35,32 @@ CORES = {
 }
 
 SLOTS = ["Arma principal", "Arma secundaria", "Armadura", "Reliquia"]
+
+# conteudo estatico do "Pergaminho do aventureiro" e do "Grimorio" - nao vem
+# da API do GitHub, e o texto de bio/skills que edita direto aqui.
+BIO_TEXTO = (
+    "Back-end com foco em dados e sistemas que aguentam carga. Construo de ponta a ponta: "
+    "modelagem, API REST, deploy e o painel que alguém vai abrir de manhã. Antes de escrever "
+    "código, pergunto que decisão o dado precisa sustentar."
+)
+BIO_TABELA = [
+    ("Origem", "Rio de Janeiro, BR"),
+    ("Escola", "Back-end, dados e automação"),
+    ("Campo de batalha", "Sistemas completos, do banco à tela"),
+    ("Marca registrada", "Deploy em cloud e domínio próprio por projeto"),
+]
+GRIMORIO = [
+    ("Conjuração", [
+        ("Python", "3572A5"), ("Django", "092E20"),
+        ("PHP", "4F5D95"), ("APIs REST", "005571"),
+    ]),
+    ("Câmaras de dados", [
+        ("MySQL", "4479A1"), ("PostgreSQL", "336791"),
+    ]),
+    ("Forja", [
+        ("AWS", "232F3E"), ("Git", "F05032"), ("Power BI", "F2C811"),
+    ]),
+]
 
 QUERY = """
 query($login: String!) {
@@ -158,6 +185,10 @@ VELLUM, DIM = "#e6d3a3", "#8a7c62"
 EQUIP_CARDS_Y, EQUIP_CARD_H = 458, 68
 FEITOS_ROWS_Y0, FEITOS_ROW_H = 580, 22
 CRONICA_ROWS_Y0, CRONICA_ROW_H = 882, 22
+PERG_TEXT_Y0, PERG_LINE_H = 1052, 20
+PERG_TABLE_Y0, PERG_ROW_H = 1112, 22
+GRIM_GROUPS_Y0 = 1238
+GRIM_LABEL_TO_PILLS, GRIM_PILL_H, GRIM_GROUP_GAP = 10, 24, 22
 
 
 def tom(hexcor, sat_mul, luz):
@@ -272,6 +303,49 @@ def svg_cronica(d, v):
     return "".join(out)
 
 
+def svg_pergaminho(v):
+    out = []
+    linhas = textwrap.wrap(BIO_TEXTO, width=90)
+    for i, linha in enumerate(linhas):
+        y = PERG_TEXT_Y0 + i * PERG_LINE_H
+        out.append(f'<text x="16" y="{y}" font-size="13" fill="{v["VELLUM"]}">{escapar(linha)}</text>')
+    for i, (rotulo, valor) in enumerate(BIO_TABELA):
+        y = PERG_TABLE_Y0 + i * PERG_ROW_H
+        out.append(
+            f'<text x="16" y="{y}" font-size="10.5" fill="{v["DIM"]}">{escapar(rotulo).upper()}</text>'
+            f'<text x="210" y="{y}" font-size="12" fill="{v["VELLUM"]}">{escapar(valor)}</text>'
+        )
+    return "".join(out)
+
+
+def svg_pill(x, y, texto, cor_hex):
+    cor = cor_hex if cor_hex.startswith("#") else "#" + cor_hex
+    r, g, b = (int(cor[i:i + 2], 16) for i in (1, 3, 5))
+    luminancia = 0.299 * r + 0.587 * g + 0.114 * b
+    texto_cor = "#1b1f22" if luminancia > 150 else "#f2ead2"
+    largura = round(20 + len(texto) * 6.6)
+    svg = (f'<rect x="{x}" y="{y}" width="{largura}" height="{GRIM_PILL_H}" rx="4" fill="{cor}"/>'
+           f'<text x="{x + largura / 2:.0f}" y="{y + 16}" font-size="11" text-anchor="middle" '
+           f'fill="{texto_cor}">{texto}</text>')
+    return svg, largura
+
+
+def svg_grimorio(v):
+    out = []
+    y_label = GRIM_GROUPS_Y0
+    for nome_grupo, itens in GRIMORIO:
+        out.append(f'<text x="16" y="{y_label}" font-size="12" font-weight="bold" '
+                   f'fill="{v["VELLUM"]}">{escapar(nome_grupo)}</text>')
+        y_pill = y_label + GRIM_LABEL_TO_PILLS
+        x = 16
+        for nome, cor in itens:
+            pill_svg, largura = svg_pill(x, y_pill, escapar(nome), cor)
+            out.append(pill_svg)
+            x += largura + 8
+        y_label = y_pill + GRIM_PILL_H + GRIM_GROUP_GAP
+    return "".join(out)
+
+
 def montar_svg(d):
     acento = CORES.get(d["topo"], "4f9ad8")
     acento = acento if acento.startswith("#") else "#" + acento
@@ -316,6 +390,8 @@ def montar_svg(d):
     v["BLOCO_EQUIP"] = svg_equipamento(d, v)
     v["BLOCO_FEITOS"] = svg_feitos(d, v)
     v["BLOCO_CRONICA"] = svg_cronica(d, v)
+    v["BLOCO_PERGAMINHO"] = svg_pergaminho(v)
+    v["BLOCO_GRIMORIO"] = svg_grimorio(v)
 
     with open(BASE_SVG, encoding="utf-8") as f:
         svg = f.read()
