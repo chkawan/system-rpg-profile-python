@@ -1,0 +1,38 @@
+CORES_LING = ["Python"]*11 + ["PHP"]*6 + ["JavaScript"]*6 + ["TypeScript"]*1 + ["HTML"]*2
+REPOS = [
+ ("chkawan","2026-08-30",False,1,0,"JavaScript"),
+ ("system-gender-reveal-php","2026-08-28",True,0,0,"PHP"),
+ ("system-personal-django","2026-08-26",True,0,0,"Python"),
+ ("portfolio-2.0","2026-08-20",True,0,0,"TypeScript"),
+ ("tool-story-generator-javascript","2026-08-18",False,0,0,"JavaScript"),
+ ("tool-gpx-run-analyzer-python","2026-08-12",False,0,0,"Python"),
+ ("agent-taskmanagers-python","2026-08-05",False,0,0,"Python"),
+ ("api-movie-management-python","2026-07-28",False,0,0,"Python"),
+ ("tool-thumbnail-generator-python","2026-07-20",False,0,0,"Python"),
+ ("tool-password-generator-python","2026-07-10",False,0,0,"Python"),
+ ("tool-number-sequence-generator-django","2026-07-02",False,0,0,"Python"),
+ ("api-product-management-django","2026-06-25",False,0,0,"Python"),
+ ("system-login-access-php","2026-06-18",False,0,0,"PHP"),
+ ("tool-qrcode-generator-php","2026-06-10",False,0,0,"PHP"),
+ ("projeto-controle-de-visitantes.php","2026-05-30",True,0,0,"PHP"),
+ ("sistema-de-ponto","2026-05-20",True,0,0,"Python"),
+ ("bot-crypto-trading-node","2026-05-10",False,0,0,"JavaScript"),
+ ("bot-whatsapp-support-node","2026-05-02",False,0,0,"JavaScript"),
+ ("tools-carbonCalc-javascript","2026-04-20",False,0,0,"JavaScript"),
+ ("ecommerce","2026-04-10",True,0,0,"PHP"),
+ ("landing-visitates","2026-03-28",True,0,0,"HTML"),
+ ("template-valentine-javascript","2026-03-15",False,0,0,"JavaScript"),
+ ("system-clothing-store-erp-django","2026-03-01",True,0,0,"Python"),
+ ("projeto-carros-django.py","2026-02-20",True,0,0,"Python"),
+ ("sistema_visitantes","2026-02-10",True,0,0,"PHP"),
+ ("portfolio","2026-01-20",True,0,0,"HTML"),
+ ("study-notes-collection","2026-01-10",False,0,0,None),
+ ("prompt-engineered-decision-agent","2025-12-20",False,0,0,None),
+]
+PREVIA = {
+ "nome":"Christopher Kawan","login":"chkawan",
+ "criado":"2022-01-27T00:00:00Z","local":"Rio de Janeiro, BR",
+ "seguidores":4,"commits":123,
+ "repos":[{"nome":n,"push":p+"T00:00:00Z","privado":pr,"estrelas":e,"forks":f,"ling":l}
+          for n,p,pr,e,f,l in REPOS],
+}

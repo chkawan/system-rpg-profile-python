@@ -1,0 +1,40 @@
+name: Forjar ficha
+
+on:
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "scripts/gerar_ficha.py"
+      - ".github/workflows/ficha.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  forjar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - run: pip install requests
+
+      - name: Preencher os blocos do README
+        env:
+          GH_TOKEN: ${{ secrets.FICHA_TOKEN }}
+          FICHA_LOGIN: chkawan
+        run: python scripts/gerar_ficha.py
+
+      - name: Commitar se mudou
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add README.md ficha/ficha.svg
+          git diff --staged --quiet || git commit -m "chore: atualiza a ficha"
+          git push

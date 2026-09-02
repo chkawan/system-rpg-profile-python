@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Ficha do Aventureiro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jacquard+24&family=Pixelify+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#1b1410;
+  --stone:#2b2119;
+  --stone-lit:#4a3a2c;
+  --stone-dark:#0e0a08;
+  --vellum:#e6d3a3;
+  --vellum-dim:#a89170;
+  --gold:#c9a227;
+  --rubric:#8c2f2f;
+  --verdigris:#3f6b7a;
+  --moss:#6b8f3a;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{background:var(--ink)}
+body{
+  background:
+    repeating-linear-gradient(0deg,transparent 0 3px,rgba(0,0,0,.22) 3px 4px),
+    var(--ink);
+  color:var(--vellum);
+  font-family:"Pixelify Sans",monospace;
+  font-size:17px;
+  line-height:1.5;
+  padding:20px 14px 64px;
+  -webkit-font-smoothing:none;
+  image-rendering:pixelated;
+}
+.sheet{max-width:900px;margin:0 auto}
+body,.bevel,.slot,.deed,input[type=text],button{transition:background-color 280ms steps(5),box-shadow 280ms steps(5),color 280ms steps(5)}
+@media (prefers-reduced-motion:reduce){body,.bevel,.slot,.deed,input[type=text],button{transition:none}}
+
+.bevel{
+  background:var(--stone);
+  box-shadow:
+    inset 4px 4px 0 var(--stone-lit),
+    inset -4px -4px 0 var(--stone-dark),
+    0 0 0 4px var(--stone-dark);
+  padding:18px;
+}
+.bevel + .bevel{margin-top:22px}
+
+/* ---------- seeker ---------- */
+.seeker{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:22px}
+.seeker label{font-size:15px;color:var(--vellum-dim);width:100%}
+input[type=text]{
+  flex:1;min-width:180px;
+  background:var(--ink);color:var(--vellum);
+  font-family:inherit;font-size:17px;
+  border:0;padding:10px 12px;
+  box-shadow:inset 3px 3px 0 var(--stone-dark),inset -3px -3px 0 var(--stone-lit),0 0 0 3px var(--stone-dark);
+}
+input[type=text]:focus{outline:3px solid var(--gold);outline-offset:3px}
+button{
+  background:var(--stone);color:var(--gold);
+  font-family:inherit;font-size:17px;letter-spacing:.5px;
+  border:0;padding:10px 20px;cursor:pointer;
+  box-shadow:inset 3px 3px 0 var(--stone-lit),inset -3px -3px 0 var(--stone-dark),0 0 0 3px var(--stone-dark);
+}
+button:hover{color:var(--vellum)}
+button:active{box-shadow:inset -3px -3px 0 var(--stone-lit),inset 3px 3px 0 var(--stone-dark),0 0 0 3px var(--stone-dark)}
+button:focus-visible{outline:3px solid var(--gold);outline-offset:3px}
+
+/* ---------- banner ---------- */
+.banner{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap}
+.portrait{
+  width:128px;height:128px;flex:none;
+  background:var(--ink);
+  box-shadow:inset 3px 3px 0 var(--stone-dark),inset -3px -3px 0 var(--stone-lit),0 0 0 4px var(--gold);
+}
+.portrait canvas{width:100%;height:100%;image-rendering:pixelated;display:block}
+.identity{flex:1;min-width:220px}
+.name{
+  font-family:"Jacquard 24",serif;
+  font-size:64px;line-height:.9;
+  color:var(--vellum);
+  text-shadow:4px 4px 0 var(--stone-dark);
+  word-break:break-word;
+}
+.epithet{font-size:19px;color:var(--gold);margin-top:6px}
+.origin{font-size:16px;color:var(--vellum-dim);margin-top:2px}
+.medallion{
+  flex:none;text-align:center;
+  background:var(--ink);padding:10px 14px;
+  box-shadow:inset 3px 3px 0 var(--stone-dark),inset -3px -3px 0 var(--stone-lit),0 0 0 4px var(--gold);
+}
+.medallion .num{font-family:"Jacquard 24",serif;font-size:52px;line-height:1;color:var(--gold)}
+.medallion .cap{font-size:14px;color:var(--vellum-dim)}
+
+/* ---------- bars ---------- */
+.vitals{margin-top:22px;display:grid;gap:12px}
+.vital{display:grid;grid-template-columns:74px 1fr auto;gap:10px;align-items:center}
+.vital .tag{font-size:16px;color:var(--vellum-dim)}
+.track{
+  height:22px;background:var(--ink);
+  box-shadow:inset 3px 3px 0 var(--stone-dark),inset -3px -3px 0 var(--stone-lit);
+  position:relative;overflow:hidden;
+}
+.fill{
+  height:100%;width:0;
+  background-image:repeating-linear-gradient(90deg,currentColor 0 10px,rgba(0,0,0,.28) 10px 12px);
+  transition:width 900ms steps(24,end);
+}
+.vital .val{font-size:15px;color:var(--vellum-dim);min-width:74px;text-align:right}
+.hp{color:var(--rubric)}
+.mp{color:var(--verdigris)}
+.st{color:var(--moss)}
+.xp{color:var(--gold)}
+
+/* ---------- headings ---------- */
+h2{
+  font-family:"Jacquard 24",serif;font-weight:400;
+  font-size:34px;line-height:1;color:var(--gold);
+  margin-bottom:14px;
+  border-bottom:4px solid var(--stone-dark);
+  padding-bottom:8px;
+}
+
+/* ---------- attributes ---------- */
+.attrs{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px 26px}
+.attr{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:baseline}
+.attr .lab{font-size:17px}
+.attr .sc{font-size:20px;color:var(--gold)}
+.pips{grid-column:1/-1;display:flex;gap:3px}
+.pip{width:100%;height:9px;background:var(--stone-dark)}
+.pip.on{background:var(--gold)}
+.attr .why{grid-column:1/-1;font-size:14px;color:var(--vellum-dim);margin-top:-2px}
+
+/* ---------- equipment ---------- */
+.slots{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px}
+.slot{
+  background:var(--ink);padding:12px 14px;
+  box-shadow:inset 3px 3px 0 var(--stone-dark),inset -3px -3px 0 var(--stone-lit);
+  border-left:6px solid var(--vellum-dim);
+}
+.slot .kind{font-size:14px;color:var(--vellum-dim)}
+.slot .item{font-size:20px;color:var(--vellum)}
+.slot .rar{font-size:15px}
+
+/* ---------- deeds ---------- */
+.deeds{display:flex;flex-wrap:wrap;gap:10px}
+.deed{
+  font-size:16px;padding:7px 14px;
+  background:var(--ink);color:var(--gold);
+  box-shadow:inset 2px 2px 0 var(--stone-dark),inset -2px -2px 0 var(--stone-lit);
+}
+.deed.locked{color:#5c5145}
+
+/* ---------- log ---------- */
+.log{list-style:none;font-size:16px}
+.log li{padding:8px 0;border-bottom:2px solid var(--stone-dark);display:flex;gap:12px}
+.log li:last-child{border-bottom:0}
+.log .when{color:var(--vellum-dim);flex:none;min-width:56px}
+
+.notice{font-size:16px;color:var(--rubric);padding:10px 0}
+.hint{font-size:14px;color:var(--vellum-dim);margin-top:26px;text-align:center}
+
+@media (prefers-reduced-motion:reduce){.fill{transition:none}}
+@media (max-width:520px){
+  .name{font-size:46px}
+  .vital{grid-template-columns:60px 1fr;grid-template-rows:auto auto}
+  .vital .val{grid-column:2;text-align:left;margin-top:-6px}
+}
+</style>
+</head>
+<body>
+<main class="sheet">
+
+  <div class="bevel seeker">
+    <label for="user">Nome do aventureiro no reino do GitHub</label>
+    <input type="text" id="user" placeholder="octocat" autocomplete="off" spellcheck="false">
+    <button id="go">Invocar ficha</button>
+  </div>
+
+  <div id="err" class="notice" hidden></div>
+
+  <section class="bevel" aria-label="Identidade">
+    <div class="banner">
+      <div class="portrait"><canvas id="face" width="32" height="32"></canvas></div>
+      <div class="identity">
+        <div class="name" id="name">Aguardando</div>
+        <div class="epithet" id="epithet">nenhuma alma invocada</div>
+        <div class="origin" id="origin">Digite um usuário acima para começar</div>
+      </div>
+      <div class="medallion"><div class="num" id="lvl">1</div><div class="cap">nível</div></div>
+    </div>
+
+    <div class="vitals">
+      <div class="vital"><span class="tag">Vida</span><div class="track"><div class="fill hp" id="bar-hp"></div></div><span class="val" id="val-hp">0 / 0</span></div>
+      <div class="vital"><span class="tag">Mana</span><div class="track"><div class="fill mp" id="bar-mp"></div></div><span class="val" id="val-mp">0 / 0</span></div>
+      <div class="vital"><span class="tag">Vigor</span><div class="track"><div class="fill st" id="bar-st"></div></div><span class="val" id="val-st">0 / 0</span></div>
+      <div class="vital"><span class="tag">Exp.</span><div class="track"><div class="fill xp" id="bar-xp"></div></div><span class="val" id="val-xp">0 / 0</span></div>
+    </div>
+  </section>
+
+  <section class="bevel">
+    <h2>Atributos</h2>
+    <div class="attrs" id="attrs"></div>
+  </section>
+
+  <section class="bevel">
+    <h2>Equipamento</h2>
+    <div class="slots" id="slots"></div>
+  </section>
+
+  <section class="bevel">
+    <h2>Feitos</h2>
+    <div class="deeds" id="deeds"></div>
+  </section>
+
+  <section class="bevel">
+    <h2>Crônica recente</h2>
+    <ul class="log" id="log"></ul>
+  </section>
+
+  <p class="hint">Dados públicos da API do GitHub. Sem token, o reino permite 60 invocações por hora.</p>
+</main>
+
+<script>
+const CLASSES = {
+  JavaScript:["Alquimista errante","transmuta o que ninguém pediu"],
+  TypeScript:["Escriba dos Tipos","anota tudo antes que quebre"],
+  Python:["Encantador de serpentes","fala baixo e resolve"],
+  PHP:["Necromante","ergue sistemas que deviam ter morrido"],
+  Java:["Cavaleiro da Ordem","armadura pesada, passo firme"],
+  "C#":["Templário","serve a uma catedral fechada"],
+  Go:["Mensageiro","chega antes de você notar"],
+  Rust:["Ferreiro","não entrega lâmina rachada"],
+  Ruby:["Joalheiro","poucos versos, muito brilho"],
+  HTML:["Pedreiro","levanta a estrutura que os outros pintam"],
+  CSS:["Vitralista","a luz passa do jeito que ele mandou"],
+  Shell:["Feiticeiro do terminal","conjura em uma linha"],
+  Dart:["Arqueiro","um alvo, duas telas"],
+  Kotlin:["Ranger","atalhos que ninguém mapeou"],
+  Swift:["Falcoeiro","voa só no céu do rei"],
+  Vue:["Bardo","conta a mesma história de forma leve"],
+  SCSS:["Vitralista","a luz passa do jeito que ele mandou"],
+  Blade:["Necromante","ergue sistemas que deviam ter morrido"]
+};
+const FALLBACK_CLASS = ["Andarilho","aprende no caminho"];
+
+/* null = REST público (só repositório público, sem token).
+   "/api/ficha/" = usa o proxy Django com token, incluindo os privados. */
+const API_BASE = null;
+
+/* Com o proxy ligado, mostra o nome dos repositórios privados na crônica. */
+const SHOW_PRIVATE_NAMES = true;
+
+/* Deixe null para usar a cor da linguagem dominante.
+   Coloque um hex ("#1e6fbf") para fixar a cor da sua marca. */
+const BRAND = null;
+
+const LANG_COLORS = {
+  JavaScript:"#f1e05a", TypeScript:"#3178c6", Python:"#3572A5", PHP:"#4F5D95",
+  Java:"#b07219", "C#":"#178600", Go:"#00ADD8", Rust:"#dea584", Ruby:"#701516",
+  HTML:"#e34c26", CSS:"#563d7c", SCSS:"#c6538c", Shell:"#89e051", Dart:"#00B4AB",
+  Kotlin:"#A97BFF", Swift:"#F05138", Vue:"#41b883", C:"#555555", "C++":"#f34b7d",
+  Blade:"#f7523f", Elixir:"#6e4a7e", Lua:"#000080", "Jupyter Notebook":"#DA5B0B"
+};
+
+function hexToHsl(hex){
+  const n = parseInt(hex.slice(1), 16);
+  const r = (n >> 16 & 255) / 255, g = (n >> 8 & 255) / 255, b = (n & 255) / 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), d = mx - mn;
+  let h = 0;
+  if (d) {
+    if (mx === r) h = ((g - b) / d + (g < b ? 6 : 0));
+    else if (mx === g) h = (b - r) / d + 2;
+    else h = (r - g) / d + 4;
+    h *= 60;
+  }
+  const l = (mx + mn) / 2;
+  const s = d ? d / (1 - Math.abs(2 * l - 1)) : 0;
+  return { h, s: s * 100, l: l * 100 };
+}
+
+function hsl(h, s, l){
+  s = Math.max(0, Math.min(100, s)) / 100;
+  l = Math.max(0, Math.min(100, l)) / 100;
+  const c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs((h / 60) % 2 - 1)), m = l - c / 2;
+  const seg = [[c,x,0],[x,c,0],[0,c,x],[0,x,c],[x,0,c],[c,0,x]][Math.floor(h / 60) % 6];
+  return "#" + seg.map(v => Math.round((v + m) * 255).toString(16).padStart(2, "0")).join("");
+}
+
+function applyTheme(hex){
+  const root = document.documentElement.style;
+  if (!hex) {
+    ["--gold","--ink","--stone","--stone-lit","--stone-dark","--verdigris"].forEach(v => root.removeProperty(v));
+    return;
+  }
+  const { h, s } = hexToHsl(hex);
+  const sat = Math.max(38, Math.min(78, s));
+  root.setProperty("--gold", hsl(h, sat, 64));
+  root.setProperty("--ink", hsl(h, sat * 0.28, 7));
+  root.setProperty("--stone", hsl(h, sat * 0.24, 14));
+  root.setProperty("--stone-lit", hsl(h, sat * 0.22, 27));
+  root.setProperty("--stone-dark", hsl(h, sat * 0.3, 4));
+  root.setProperty("--verdigris", hsl((h + 175) % 360, sat * 0.55, 45));
+}
+const RARITIES = [["Comum","#a89170"],["Incomum","#6b8f3a"],["Raro","#3f6b7a"],["Épico","#7a5aa8"],["Lendário","#c9a227"]];
+
+const el = id => document.getElementById(id);
+const scale = (v, max, cap = 20) => Math.max(1, Math.min(cap, Math.round(Math.log10(v + 1) / Math.log10(max + 1) * cap)));
+
+function setBar(barId, valId, cur, max, suffix = "") {
+  const pct = max > 0 ? Math.max(0, Math.min(100, cur / max * 100)) : 0;
+  requestAnimationFrame(() => { el(barId).style.width = pct + "%"; });
+  el(valId).textContent = Math.round(cur) + " / " + Math.round(max) + suffix;
+}
+
+function drawFace(url) {
+  const cv = el("face"), cx = cv.getContext("2d");
+  cx.imageSmoothingEnabled = false;
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  img.onload = () => { cx.clearRect(0, 0, 32, 32); cx.drawImage(img, 0, 0, 32, 32); };
+  img.onerror = () => { cx.fillStyle = "#4a3a2c"; cx.fillRect(0, 0, 32, 32); };
+  img.src = url + "&s=64";
+}
+
+function renderAttrs(list) {
+  el("attrs").innerHTML = list.map(a => `
+    <div class="attr">
+      <span class="lab">${a.name}</span><span class="sc">${a.score}</span>
+      <div class="pips">${Array.from({length:20},(_,i)=>`<span class="pip ${i<a.score?"on":""}"></span>`).join("")}</div>
+      <span class="why">${a.why}</span>
+    </div>`).join("");
+}
+
+function renderSlots(langs) {
+  const kinds = ["Arma principal","Arma secundária","Armadura","Relíquia","Amuleto","Tomo"];
+  if (!langs.length) { el("slots").innerHTML = `<div class="slot"><div class="kind">Mãos vazias</div><div class="item">Nenhum repositório com linguagem detectada</div></div>`; return; }
+  el("slots").innerHTML = langs.slice(0, 6).map((l, i) => {
+    const r = RARITIES[Math.min(4, Math.floor(l.share * 5))];
+    return `<div class="slot" style="border-left-color:${r[1]}">
+      <div class="kind">${kinds[i]}</div>
+      <div class="item">${l.name}</div>
+      <div class="rar" style="color:${r[1]}">${r[0]} · ${l.count} repo${l.count > 1 ? "s" : ""} · ${Math.round(l.share * 100)}% do arsenal</div>
+    </div>`;
+  }).join("");
+}
+
+function renderDeeds(d) {
+  const all = [
+    ["Primeiro passo", d.repos >= 1],
+    ["Guarda de dez portões", d.repos >= 10],
+    ["Senhor de cinquenta torres", d.repos >= 50],
+    ["Primeira estrela", d.stars >= 1],
+    ["Constelação", d.stars >= 25],
+    ["Poliglota", d.langs >= 5],
+    ["Veterano de guerra", d.years >= 3],
+    ["Ancião do reino", d.years >= 8],
+    ["Reunidor de tropas", d.followers >= 10],
+    ["Obra copiada", d.forks >= 5],
+    ["Vigília ativa", d.recent >= 5]
+  ];
+  el("deeds").innerHTML = all.map(([n, got]) => `<span class="deed ${got ? "" : "locked"}">${got ? "✦" : "✧"} ${n}</span>`).join("");
+}
+
+const fmtDay = d => String(d.getDate()).padStart(2, "0") + "/" + String(d.getMonth() + 1).padStart(2, "0");
+
+function renderLog(entries) {
+  if (!entries.length) { el("log").innerHTML = `<li><span class="when">—</span><span>As estradas andaram silenciosas.</span></li>`; return; }
+  el("log").innerHTML = entries.slice(0, 8).map(e => `<li><span class="when">${e.when}</span><span>${e.what}</span></li>`).join("");
+}
+
+function chronicleFromEvents(events) {
+  const verb = { PushEvent:"forjou commits em", CreateEvent:"ergueu", WatchEvent:"jurou lealdade a", ForkEvent:"copiou os planos de", IssuesEvent:"abriu uma disputa em", PullRequestEvent:"ofereceu tributo a", ReleaseEvent:"proclamou uma versão de", PublicEvent:"abriu os portões de" };
+  return events.map(e => ({
+    when: fmtDay(new Date(e.created_at)),
+    what: `${verb[e.type] || "agiu sobre"} ${e.repo.name.split("/")[1]}`
+  }));
+}
+
+function chronicleFromRepos(repos) {
+  return [...repos]
+    .sort((a, b) => new Date(b.pushedAt) - new Date(a.pushedAt))
+    .map(r => ({
+      when: fmtDay(new Date(r.pushedAt)),
+      what: r.isPrivate && !SHOW_PRIVATE_NAMES ? "forjou em uma obra selada" : `forjou em ${r.name}`
+    }));
+}
+
+/* Modo 1 — REST público, sem token. Só repositório público, sem commits históricos. */
+async function fetchPublic(login) {
+  const [uRes, rRes, eRes] = await Promise.all([
+    fetch(`https://api.github.com/users/${login}`),
+    fetch(`https://api.github.com/users/${login}/repos?per_page=100&sort=updated`),
+    fetch(`https://api.github.com/users/${login}/events/public?per_page=100`)
+  ]);
+  if (uRes.status === 404) throw new Error("Nenhuma alma com esse nome nos registros do reino.");
+  if (uRes.status === 403) throw new Error("O reino trancou os portões: limite de 60 consultas por hora atingido. Tente de novo em alguns minutos.");
+  if (!uRes.ok) throw new Error("Os arquivos do reino não responderam.");
+
+  const user = await uRes.json();
+  const repos = rRes.ok ? await rRes.json() : [];
+  const events = eRes.ok ? await eRes.json() : [];
+
+  return {
+    name: user.name, login: user.login, avatar: user.avatar_url,
+    createdAt: user.created_at, location: user.location, followers: user.followers,
+    repos: repos.filter(r => !r.fork).map(r => ({
+      name: r.name, pushedAt: r.pushed_at, isPrivate: r.private,
+      stars: r.stargazers_count, forks: r.forks_count,
+      language: r.language, langColor: null
+    })),
+    commits: null,
+    pushes: events.filter(e => e.type === "PushEvent").length,
+    chronicle: chronicleFromEvents(events)
+  };
+}
+
+/* Modo 2 — proxy Django com token. Inclui privados e contribuição do ano. */
+async function fetchProxy(login) {
+  const res = await fetch(`${API_BASE}${login}/`);
+  if (res.status === 404) throw new Error("Nenhuma alma com esse nome nos registros do reino.");
+  if (!res.ok) throw new Error("O escriba do reino não respondeu. Confira se o endpoint está no ar.");
+  const u = await res.json();
+  const nodes = u.repositories.nodes;
+
+  return {
+    name: u.name, login: u.login, avatar: u.avatarUrl,
+    createdAt: u.createdAt, location: u.location, followers: u.followers.totalCount,
+    repos: nodes.map(r => ({
+      name: r.name, pushedAt: r.pushedAt, isPrivate: r.isPrivate,
+      stars: r.stargazerCount, forks: r.forkCount,
+      language: r.primaryLanguage?.name || null,
+      langColor: r.primaryLanguage?.color || null
+    })),
+    commits: u.contributionsCollection.contributionCalendar.totalContributions,
+    pushes: null,
+    chronicle: chronicleFromRepos(nodes.map(r => ({ name: r.name, pushedAt: r.pushedAt, isPrivate: r.isPrivate })))
+  };
+}
+
+async function summon(login) {
+  el("err").hidden = true;
+  const a = API_BASE ? await fetchProxy(login) : await fetchPublic(login);
+
+  const own = a.repos;
+  const sealed = own.filter(r => r.isPrivate).length;
+  const stars = own.reduce((s, r) => s + r.stars, 0);
+  const forks = own.reduce((s, r) => s + r.forks, 0);
+  const years = (Date.now() - new Date(a.createdAt)) / 31557600000;
+  const cutoff = Date.now() - 90 * 86400000;
+  const recent = own.filter(r => new Date(r.pushedAt) > cutoff).length;
+
+  const tally = {}, colors = {};
+  own.forEach(r => {
+    if (!r.language) return;
+    tally[r.language] = (tally[r.language] || 0) + 1;
+    if (r.langColor) colors[r.language] = r.langColor;
+  });
+  const total = Object.values(tally).reduce((x, y) => x + y, 0) || 1;
+  const langs = Object.entries(tally).sort((x, y) => y[1] - x[1])
+    .map(([name, count]) => ({ name, count, share: count / total }));
+
+  const top = langs[0]?.name;
+  const cls = CLASSES[top] || FALLBACK_CLASS;
+  const lvl = Math.max(1, Math.min(99, Math.round(scale(own.length, 200, 40) + scale(stars, 5000, 35) + years * 2)));
+
+  applyTheme(BRAND || colors[top] || LANG_COLORS[top] || null);
+
+  el("name").textContent = a.name || a.login;
+  el("epithet").textContent = `${cls[0]} — ${cls[1]}`;
+  el("origin").textContent = [
+    a.location || "origem desconhecida",
+    `iniciou a jornada em ${new Date(a.createdAt).getFullYear()}`,
+    sealed ? `${own.length} obras, ${sealed} seladas` : `${own.length} obras`
+  ].join(" · ");
+  el("lvl").textContent = lvl;
+  drawFace(a.avatar);
+
+  const hpMax = 40 + own.length * 4;
+  const mpMax = 30 + stars * 2;
+  const vigor = a.commits !== null ? Math.min(1000, a.commits) : Math.min(100, a.pushes * 4);
+  const vigorMax = a.commits !== null ? 1000 : 100;
+  setBar("bar-hp", "val-hp", 40 + recent * 4, hpMax);
+  setBar("bar-mp", "val-mp", Math.min(mpMax, 30 + stars * 2), mpMax);
+  setBar("bar-st", "val-st", vigor, vigorMax);
+  setBar("bar-xp", "val-xp", (lvl % 1 || 0.35) * 1000 + own.length * 37 % 1000, 1000, " xp");
+
+  renderAttrs([
+    { name: "Força", score: scale(own.length, 200), why: sealed ? `${own.length} repositórios erguidos, ${sealed} selados` : `${own.length} repositórios erguidos` },
+    { name: "Destreza", score: scale(langs.length, 20), why: `${langs.length} linguagens empunhadas` },
+    { name: "Constituição", score: scale(years, 15), why: `${years.toFixed(1)} anos de estrada` },
+    { name: "Inteligência", score: scale(stars, 5000), why: `${stars} estrelas recebidas` },
+    { name: "Sabedoria", score: scale(forks, 1000), why: `${forks} obras copiadas por outros` },
+    { name: "Carisma", score: scale(a.followers, 5000), why: `${a.followers} seguidores no reino` }
+  ]);
+  renderSlots(langs);
+  renderDeeds({ repos: own.length, stars, langs: langs.length, years, followers: a.followers, forks, recent });
+  renderLog(a.chronicle);
+}
+
+async function run() {
+  const login = el("user").value.trim();
+  if (!login) { el("err").hidden = false; el("err").textContent = "Escreva um nome antes de invocar."; return; }
+  el("go").textContent = "Consultando…";
+  try { await summon(login); }
+  catch (e) { el("err").hidden = false; el("err").textContent = e.message; }
+  finally { el("go").textContent = "Invocar ficha"; }
+}
+
+el("go").addEventListener("click", run);
+el("user").addEventListener("keydown", e => { if (e.key === "Enter") run(); });
+el("user").value = "torvalds";
+run();
+</script>
+</body>
+</html>
