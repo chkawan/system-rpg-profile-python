@@ -15,6 +15,9 @@
     <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse">
       <rect width="4" height="1" fill="#000" opacity="0.2"/>
     </pattern>
+    <filter id="borrao" x="-20%" y="-60%" width="140%" height="220%">
+      <feGaussianBlur stdDeviation="2.6"/>
+    </filter>
   </defs>
 
   <rect width="880" height="1020" fill="#0d0f12"/>
@@ -114,7 +117,7 @@
   <!-- cronica -->
   <text x="16" y="858" font-size="15" font-weight="bold" fill="#79a7ce">CRONICA RECENTE</text>
   <rect x="16" y="866" width="848" height="2" fill="#060809"/>
-  <text x="16" y="882" font-size="12" fill="#8a7c62">30/08<tspan fill="#e6d3a3"> forjou em chkawan</tspan></text><text x="16" y="904" font-size="12" fill="#8a7c62">28/08<tspan fill="#e6d3a3"> forjou em system-gender-reveal-php</tspan></text><text x="16" y="926" font-size="12" fill="#8a7c62">26/08<tspan fill="#e6d3a3"> forjou em system-personal-django</tspan></text><text x="16" y="948" font-size="12" fill="#8a7c62">20/08<tspan fill="#e6d3a3"> forjou em portfolio-2.0</tspan></text><text x="16" y="970" font-size="12" fill="#8a7c62">18/08<tspan fill="#e6d3a3"> forjou em tool-story-generator-javascript</tspan></text><text x="16" y="992" font-size="12" fill="#8a7c62">12/08<tspan fill="#e6d3a3"> forjou em tool-gpx-run-analyzer-python</tspan></text>
+  <text x="16" y="882" font-size="12" fill="#8a7c62">30/08<tspan fill="#e6d3a3"> forjou em chkawan</tspan></text><text x="16" y="904" font-size="12" fill="#8a7c62">28/08<tspan fill="#e6d3a3"> forjou em <tspan filter="url(#borrao)">system-gender-reveal-php</tspan><tspan fill="#8a7c62"> (selado)</tspan></tspan></text><text x="16" y="926" font-size="12" fill="#8a7c62">26/08<tspan fill="#e6d3a3"> forjou em <tspan filter="url(#borrao)">system-personal-django</tspan><tspan fill="#8a7c62"> (selado)</tspan></tspan></text><text x="16" y="948" font-size="12" fill="#8a7c62">20/08<tspan fill="#e6d3a3"> forjou em <tspan filter="url(#borrao)">portfolio-2.0</tspan><tspan fill="#8a7c62"> (selado)</tspan></tspan></text><text x="16" y="970" font-size="12" fill="#8a7c62">18/08<tspan fill="#e6d3a3"> forjou em tool-story-generator-javascript</tspan></text><text x="16" y="992" font-size="12" fill="#8a7c62">12/08<tspan fill="#e6d3a3"> forjou em tool-gpx-run-analyzer-python</tspan></text>
 
   <rect width="880" height="1020" fill="url(#scan)"/>
 </svg>

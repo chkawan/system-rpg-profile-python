@@ -15,6 +15,9 @@
     <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse">
       <rect width="4" height="1" fill="#000" opacity="0.2"/>
     </pattern>
+    <filter id="borrao" x="-20%" y="-60%" width="140%" height="220%">
+      <feGaussianBlur stdDeviation="2.6"/>
+    </filter>
   </defs>
 
   <rect width="880" height="1020" fill="{{INK}}"/>

@@ -260,9 +260,14 @@ def svg_cronica(d, v):
     for i, r in enumerate(cronica_recente(d)):
         y = CRONICA_ROWS_Y0 + i * CRONICA_ROW_H
         quando = datetime.fromisoformat(r["push"].replace("Z", "+00:00")).strftime("%d/%m")
+        if r["privado"]:
+            nome = (f'<tspan filter="url(#borrao)">{truncar(escapar(r["nome"]), 60)}</tspan>'
+                    f'<tspan fill="{v["DIM"]}"> (selado)</tspan>')
+        else:
+            nome = truncar(escapar(r["nome"]), 60)
         out.append(
             f'<text x="16" y="{y}" font-size="12" fill="{v["DIM"]}">{quando}'
-            f'<tspan fill="{v["VELLUM"]}"> forjou em {truncar(escapar(r["nome"]), 60)}</tspan></text>'
+            f'<tspan fill="{v["VELLUM"]}"> forjou em {nome}</tspan></text>'
         )
     return "".join(out)
 
