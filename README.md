@@ -6,50 +6,6 @@
 
 ---
 
-### Equipamento
-
-<!-- ficha:equipamento:inicio -->
-
-| Slot | Item | Raridade |
-|:--|:--|:--|
-| <sub>Arma principal</sub> | ![Python](https://img.shields.io/badge/Python-3572A5?style=flat-square "11 repositorios, 42% do arsenal") | <sub>Raro &middot; 11 repos &middot; 42%</sub> |
-| <sub>Arma secundaria</sub> | ![JavaScript](https://img.shields.io/badge/JavaScript-f1e05a?style=flat-square "6 repositorios, 23% do arsenal") | <sub>Incomum &middot; 6 repos &middot; 23%</sub> |
-| <sub>Armadura</sub> | ![PHP](https://img.shields.io/badge/PHP-4F5D95?style=flat-square "6 repositorios, 23% do arsenal") | <sub>Incomum &middot; 6 repos &middot; 23%</sub> |
-| <sub>Reliquia</sub> | ![HTML](https://img.shields.io/badge/HTML-e34c26?style=flat-square "2 repositorios, 8% do arsenal") | <sub>Comum &middot; 2 repos &middot; 8%</sub> |
-
-<!-- ficha:equipamento:fim -->
-
----
-
-### Feitos
-
-<!-- ficha:feitos:inicio -->
-
-<sub>Passe o mouse sobre cada selo para ver o que ele exige.</sub>
-
-![Primeiro passo](https://img.shields.io/badge/%E2%9C%A6_Primeiro_passo-4f9ad8?style=flat-square "Ergueu o primeiro repositorio") ![Guarda de dez portoes](https://img.shields.io/badge/%E2%9C%A6_Guarda_de_dez_portoes-4f9ad8?style=flat-square "Mantem 10 ou mais repositorios proprios") ![Senhor de vinte torres](https://img.shields.io/badge/%E2%9C%A6_Senhor_de_vinte_torres-4f9ad8?style=flat-square "Passou de 20 repositorios entre publicos e selados") ![Poliglota](https://img.shields.io/badge/%E2%9C%A6_Poliglota-4f9ad8?style=flat-square "Empunha 4 ou mais linguagens em projetos reais") ![Veterano](https://img.shields.io/badge/%E2%9C%A6_Veterano-4f9ad8?style=flat-square "Mais de 3 anos desde o primeiro commit") ![Anciao do reino](https://img.shields.io/badge/%E2%9C%A7_Anciao_do_reino-2b3341?style=flat-square "Bloqueado &mdash; Exige 8 anos desde o primeiro commit") ![Guardiao de segredos](https://img.shields.io/badge/%E2%9C%A6_Guardiao_de_segredos-4f9ad8?style=flat-square "5 ou mais repositorios selados") ![Vigilia ativa](https://img.shields.io/badge/%E2%9C%A6_Vigilia_ativa-4f9ad8?style=flat-square "5 ou mais repositorios com push nos ultimos 90 dias") ![Primeira estrela](https://img.shields.io/badge/%E2%9C%A6_Primeira_estrela-4f9ad8?style=flat-square "Recebeu a primeira estrela") ![Constelacao](https://img.shields.io/badge/%E2%9C%A7_Constelacao-2b3341?style=flat-square "Bloqueado &mdash; Exige 25 estrelas recebidas") ![Obra copiada](https://img.shields.io/badge/%E2%9C%A7_Obra_copiada-2b3341?style=flat-square "Bloqueado &mdash; 5 ou mais forks feitos por outras pessoas") ![Reunidor de tropas](https://img.shields.io/badge/%E2%9C%A7_Reunidor_de_tropas-2b3341?style=flat-square "Bloqueado &mdash; 10 ou mais seguidores")
-
-<!-- ficha:feitos:fim -->
-
----
-
-### Cronica recente
-
-<!-- ficha:cronica:inicio -->
-
-| Quando | Feito |
-|:--|:--|
-| <sub>30/08</sub> | forjou em `chkawan` |
-| <sub>28/08</sub> | forjou em `system-gender-reveal-php` |
-| <sub>26/08</sub> | forjou em `system-personal-django` |
-| <sub>20/08</sub> | forjou em `portfolio-2.0` |
-| <sub>18/08</sub> | forjou em `tool-story-generator-javascript` |
-| <sub>12/08</sub> | forjou em `tool-gpx-run-analyzer-python` |
-
-<!-- ficha:cronica:fim -->
-
----
-
 ### Pergaminho do aventureiro
 
 Back-end com foco em dados e sistemas que aguentam carga. Construo de ponta a ponta:
@@ -121,4 +77,4 @@ código, pergunto que decisão o dado precisa sustentar.
 [![Portfólio](https://img.shields.io/badge/Portf%C3%B3lio-kawandev.com.br-3572A5?style=flat-square&logo=vercel&logoColor=white "Projetos no ar, cada um em seu subdomínio")](https://www.kawandev.com.br/)
 [![Instagram](https://img.shields.io/badge/Instagram-@kawan.dev-E4405F?style=flat-square&logo=instagram&logoColor=white "Bastidores e conteúdo sobre dados e Excel")](https://instagram.com/kawan.dev)
 
-<sub>Ficha forjada automaticamente em <!-- ficha:carimbo:inicio -->02/09/2026 17:55 UTC<!-- ficha:carimbo:fim --> · <a href="scripts/gerar_ficha.py">como ela é gerada</a></sub>
+<sub>Ficha forjada automaticamente em <!-- ficha:carimbo:inicio -->02/09/2026 18:15 UTC<!-- ficha:carimbo:fim --> · <a href="scripts/gerar_ficha.py">como ela é gerada</a></sub>

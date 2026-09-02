@@ -1,8 +1,10 @@
 """
 Preenche os blocos da ficha dentro do README.md.
 
-O design NAO mora aqui. Ele mora no README. Este script so troca o
-conteudo entre os marcadores <!-- ficha:X:inicio --> e <!-- ficha:X:fim -->.
+O design NAO mora aqui. Ele mora no README e no SVG. Este script busca os
+dados, monta o SVG completo (banner, vitais, atributos, equipamento, feitos
+e cronica) e troca o carimbo de data entre os marcadores
+<!-- ficha:carimbo:inicio --> e <!-- ficha:carimbo:fim --> no README.
 
     python scripts/gerar_ficha.py            # busca no GitHub (usa GH_TOKEN)
     python scripts/gerar_ficha.py --previa   # roda com dados de exemplo
@@ -16,9 +18,6 @@ from datetime import datetime, timezone
 LOGIN = os.environ.get("FICHA_LOGIN", "chkawan")
 TOKEN = os.environ.get("GH_TOKEN", "")
 README = os.path.join(os.path.dirname(__file__), "..", "README.md")
-
-CHEIO, VAZIO = "\u2588", "\u2591"
-CELULAS = 22
 
 CLASSES = {
     "Python": ("Encantador de serpentes", "fala baixo e o sistema obedece"),
@@ -114,52 +113,9 @@ def derivar(d):
             "anos": anos, "recentes": recentes, "lings": lings, "topo": topo,
             "nivel": nivel, "classe": CLASSES.get(topo, FALLBACK_CLASSE)}
 
-# ------------------------------------------------------------------ blocos
 
-def barra(atual, maximo):
-    cheio = max(0, min(CELULAS, round(atual / maximo * CELULAS))) if maximo else 0
-    return CHEIO * cheio + VAZIO * (CELULAS - cheio)
-
-
-def bloco_banner(d):
-    cor = CORES.get(d["topo"], "4f9ad8")
-    linha = " &middot; ".join(filter(None, [
-        d["local"],
-        f'jornada iniciada em {d["criado"][:4]}',
-        f'{len(d["repos"])} obras' + (f', {d["selados"]} seladas' if d["selados"] else ""),
-    ]))
-    return "\n".join([
-        '<div align="center">',
-        "",
-        f'<h1>{d["nome"]}</h1>',
-        f'<p><b>{d["classe"][0]}</b><br><sub>{d["classe"][1]}</sub></p>',
-        "",
-        f'![Nivel](https://img.shields.io/badge/N%C3%8DVEL-{d["nivel"]}-{cor}'
-        f'?style=for-the-badge "Cresce com repositorios, estrelas e anos de estrada")',
-        "",
-        f"<sub>{linha}</sub>",
-        "",
-        "</div>",
-    ])
-
-
-def bloco_vitais(d):
-    vida_max = 40 + len(d["repos"]) * 4
-    mana_max = 30 + max(d["estrelas"], 20) * 2
-    linhas = [
-        ("Vida", 40 + d["recentes"] * 4, vida_max, "repositorios com push nos ultimos 90 dias"),
-        ("Mana", 30 + d["estrelas"] * 2, mana_max, "estrelas recebidas nos repositorios"),
-        ("Vigor", min(d["commits"], 1000), 1000, "contribuicoes no ultimo ano"),
-        ("Exper.", d["nivel"] % 10 * 100 + 40, 1000, "progresso ate o proximo nivel"),
-    ]
-    out = ["| | | |", "|:--|:--|--:|"]
-    for nome, atual, mx, _ in linhas:
-        out.append(f"| **{nome}** | `{barra(atual, mx)}` | `{round(atual)}/{round(mx)}` |")
-    return "\n".join(out)
-
-
-def bloco_atributos(d):
-    attrs = [
+def atributos(d):
+    return [
         ("Forca", escala(len(d["repos"]), 200),
          f'{len(d["repos"])} repositorios erguidos' +
          (f', {d["selados"]} selados' if d["selados"] else "")),
@@ -169,31 +125,10 @@ def bloco_atributos(d):
         ("Sabedoria", escala(d["forks"], 1000), f'{d["forks"]} obras copiadas por outros'),
         ("Carisma", escala(d["seguidores"], 5000), f'{d["seguidores"]} seguidores no reino'),
     ]
-    out = ["| Atributo | | Valor | De onde vem |", "|:--|:--|:--:|:--|"]
-    for nome, v, porque in attrs:
-        pips = CHEIO * v + VAZIO * (20 - v)
-        out.append(f"| **{nome}** | `{pips}` | **{v}** | <sub>{porque}</sub> |")
-    return "\n".join(out)
 
 
-def bloco_equipamento(d):
-    if not d["lings"]:
-        return "_Maos vazias._"
-    out = ["| Slot | Item | Raridade |", "|:--|:--|:--|"]
-    raridade = ["Comum", "Incomum", "Raro", "Epico", "Lendario"]
-    for i, l in enumerate(d["lings"][:4]):
-        cor = CORES.get(l["nome"], "8a7c62")
-        r = raridade[min(4, int(l["fatia"] * 5))]
-        selo = (f'![{l["nome"]}](https://img.shields.io/badge/{l["nome"].replace(" ", "_")}'
-                f'-{cor}?style=flat-square "{l["n"]} repositorios, '
-                f'{round(l["fatia"]*100)}% do arsenal")')
-        out.append(f'| <sub>{SLOTS[i]}</sub> | {selo} | <sub>{r} &middot; '
-                   f'{l["n"]} repos &middot; {round(l["fatia"]*100)}%</sub> |')
-    return "\n".join(out)
-
-
-def bloco_feitos(d):
-    feitos = [
+def lista_feitos(d):
+    return [
         ("Primeiro passo", len(d["repos"]) >= 1, "Ergueu o primeiro repositorio"),
         ("Guarda de dez portoes", len(d["repos"]) >= 10, "Mantem 10 ou mais repositorios proprios"),
         ("Senhor de vinte torres", len(d["repos"]) >= 20, "Passou de 20 repositorios entre publicos e selados"),
@@ -207,34 +142,10 @@ def bloco_feitos(d):
         ("Obra copiada", d["forks"] >= 5, "5 ou mais forks feitos por outras pessoas"),
         ("Reunidor de tropas", d["seguidores"] >= 10, "10 ou mais seguidores"),
     ]
-    selos = []
-    for nome, ganho, dica in feitos:
-        marca = "%E2%9C%A6" if ganho else "%E2%9C%A7"
-        cor = "4f9ad8" if ganho else "2b3341"
-        rotulo = nome.replace(" ", "_").replace("-", "--")
-        estado = "" if ganho else "Bloqueado &mdash; "
-        selos.append(f'![{nome}](https://img.shields.io/badge/{marca}_{rotulo}-{cor}'
-                     f'?style=flat-square "{estado}{dica}")')
-    return "\n".join(["<sub>Passe o mouse sobre cada selo para ver o que ele exige.</sub>",
-                      "", " ".join(selos)])
 
 
-def bloco_cronica(d):
-    recentes = sorted(d["repos"], key=lambda r: r["push"], reverse=True)[:6]
-    out = ["| Quando | Feito |", "|:--|:--|"]
-    for r in recentes:
-        quando = datetime.fromisoformat(r["push"].replace("Z", "+00:00")).strftime("%d/%m")
-        nome = f'`{r["nome"]}`'
-        out.append(f"| <sub>{quando}</sub> | forjou em {nome} |")
-    return "\n".join(out)
-
-
-BLOCOS = {
-    "equipamento": bloco_equipamento,
-    "feitos": bloco_feitos,
-    "cronica": bloco_cronica,
-}
-
+def cronica_recente(d):
+    return sorted(d["repos"], key=lambda r: r["push"], reverse=True)[:6]
 
 # ------------------------------------------------------------------ svg
 
@@ -243,6 +154,10 @@ SAIDA_SVG = os.path.join(os.path.dirname(__file__), "..", "ficha", "ficha.svg")
 
 PAL_HP, PAL_MP, PAL_ST = "#8c2f2f", "#3f7a8c", "#6b8f3a"
 VELLUM, DIM = "#e6d3a3", "#8a7c62"
+
+EQUIP_CARDS_Y, EQUIP_CARD_H = 458, 68
+FEITOS_ROWS_Y0, FEITOS_ROW_H = 580, 22
+CRONICA_ROWS_Y0, CRONICA_ROW_H = 882, 22
 
 
 def tom(hexcor, sat_mul, luz):
@@ -294,6 +209,64 @@ def pips(x, y, cor, n=20, passo=19):
                    f'height="10" fill="{cor}"/>' for i in range(n))
 
 
+def truncar(texto, maximo):
+    return texto if len(texto) <= maximo else texto[:maximo - 1].rstrip() + "…"
+
+
+def escapar(texto):
+    return str(texto).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def svg_equipamento(d, v):
+    largura = (848 - 3 * 16) // 4
+    if not d["lings"]:
+        return (f'<text x="16" y="{EQUIP_CARDS_Y + 30}" font-size="12" '
+                f'fill="{v["DIM"]}">Maos vazias.</text>')
+    raridade = ["Comum", "Incomum", "Raro", "Epico", "Lendario"]
+    out = []
+    for i, l in enumerate(d["lings"][:4]):
+        x = 16 + i * (largura + 16)
+        cor = CORES.get(l["nome"], "8a7c62")
+        cor = cor if cor.startswith("#") else "#" + cor
+        r = raridade[min(4, int(l["fatia"] * 5))]
+        sub = f'{r} · {l["n"]} repos · {round(l["fatia"] * 100)}%'
+        out.append(
+            f'<rect x="{x}" y="{EQUIP_CARDS_Y}" width="{largura}" height="{EQUIP_CARD_H}" fill="{v["DARK"]}"/>'
+            f'<rect x="{x + 2}" y="{EQUIP_CARDS_Y + 2}" width="{largura - 4}" height="{EQUIP_CARD_H - 4}" fill="{v["STONE"]}"/>'
+            f'<text x="{x + 10}" y="{EQUIP_CARDS_Y + 16}" font-size="9.5" fill="{v["DIM"]}">{escapar(SLOTS[i]).upper()}</text>'
+            f'<rect x="{x + 10}" y="{EQUIP_CARDS_Y + 24}" width="14" height="14" fill="{cor}"/>'
+            f'<text x="{x + 30}" y="{EQUIP_CARDS_Y + 35}" font-size="12.5" font-weight="bold" fill="{v["VELLUM"]}">{truncar(escapar(l["nome"]), 15)}</text>'
+            f'<text x="{x + 10}" y="{EQUIP_CARDS_Y + 52}" font-size="9.5" fill="{v["DIM"]}">{truncar(sub, 24)}</text>'
+        )
+    return "".join(out)
+
+
+def svg_feitos(d, v):
+    out = []
+    for i, (nome, ganho, dica) in enumerate(lista_feitos(d)):
+        y = FEITOS_ROWS_Y0 + i * FEITOS_ROW_H
+        simbolo = "✦" if ganho else "✧"
+        cor_nome = v["GOLD"] if ganho else v["DIM"]
+        prefixo = "" if ganho else "Bloqueado - "
+        out.append(
+            f'<text x="16" y="{y}" font-size="11.5" fill="{cor_nome}">{simbolo} {escapar(nome)}'
+            f'<tspan fill="{v["DIM"]}"> - {prefixo}{escapar(dica)}</tspan></text>'
+        )
+    return "".join(out)
+
+
+def svg_cronica(d, v):
+    out = []
+    for i, r in enumerate(cronica_recente(d)):
+        y = CRONICA_ROWS_Y0 + i * CRONICA_ROW_H
+        quando = datetime.fromisoformat(r["push"].replace("Z", "+00:00")).strftime("%d/%m")
+        out.append(
+            f'<text x="16" y="{y}" font-size="12" fill="{v["DIM"]}">{quando}'
+            f'<tspan fill="{v["VELLUM"]}"> forjou em {truncar(escapar(r["nome"]), 60)}</tspan></text>'
+        )
+    return "".join(out)
+
+
 def montar_svg(d):
     acento = CORES.get(d["topo"], "4f9ad8")
     acento = acento if acento.startswith("#") else "#" + acento
@@ -314,10 +287,10 @@ def montar_svg(d):
     v = {
         "INK": ink, "STONE": stone, "LIT": lit, "DARK": dark,
         "GOLD": gold, "VELLUM": VELLUM, "DIM": DIM,
-        "NOME": d["nome"], "NIVEL": str(d["nivel"]),
-        "CLASSE": f'{d["classe"][0]} - {d["classe"][1]}',
+        "NOME": escapar(d["nome"]), "NIVEL": str(d["nivel"]),
+        "CLASSE": f'{escapar(d["classe"][0])} - {escapar(d["classe"][1])}',
         "LINHA": " . ".join(filter(None, [
-            d["local"], f'jornada iniciada em {d["criado"][:4]}',
+            escapar(d["local"]), f'jornada iniciada em {d["criado"][:4]}',
             f'{len(d["repos"])} obras' + (f', {d["selados"]} seladas' if d["selados"] else ""),
         ])),
         "SELO": selo(d["login"], 34, 30, 8, gold),
@@ -333,12 +306,16 @@ def montar_svg(d):
         y = {"A": 298, "B": 298, "C": 342, "D": 342, "E": 386, "F": 386}[letra]
         v[f"W_{letra}"] = str(valor * 19)
         v[f"PIP_{letra}"] = pips(col, y, gold)
-        v[f"N_{letra}"], v[f"V_{letra}"], v[f"D_{letra}"] = nome, str(valor), porque
+        v[f"N_{letra}"], v[f"V_{letra}"], v[f"D_{letra}"] = escapar(nome), str(valor), escapar(porque)
+
+    v["BLOCO_EQUIP"] = svg_equipamento(d, v)
+    v["BLOCO_FEITOS"] = svg_feitos(d, v)
+    v["BLOCO_CRONICA"] = svg_cronica(d, v)
 
     with open(BASE_SVG, encoding="utf-8") as f:
         svg = f.read()
     for chave, valor in v.items():
-        svg = svg.replace("{{" + chave + "}}", str(valor).replace("&", "e"))
+        svg = svg.replace("{{" + chave + "}}", str(valor))
     faltando = re.findall(r"\{\{(\w+)\}\}", svg)
     if faltando:
         raise SystemExit("placeholder sem valor no template: " + ", ".join(set(faltando)))
@@ -346,33 +323,10 @@ def montar_svg(d):
         f.write(svg)
     return svg
 
-
-def atributos(d):
-    return [
-        ("Forca", escala(len(d["repos"]), 200),
-         f'{len(d["repos"])} repositorios erguidos' +
-         (f', {d["selados"]} selados' if d["selados"] else "")),
-        ("Destreza", escala(len(d["lings"]), 20), f'{len(d["lings"])} linguagens empunhadas'),
-        ("Constituicao", escala(d["anos"], 15), f'{d["anos"]:.1f} anos de estrada'),
-        ("Inteligencia", escala(d["estrelas"], 5000), f'{d["estrelas"]} estrelas recebidas'),
-        ("Sabedoria", escala(d["forks"], 1000), f'{d["forks"]} obras copiadas por outros'),
-        ("Carisma", escala(d["seguidores"], 5000), f'{d["seguidores"]} seguidores no reino'),
-    ]
-
 # ------------------------------------------------------------------ escrita
 
 
-def preencher(texto, d):
-    faltando = []
-    for chave, fn in BLOCOS.items():
-        padrao = re.compile(
-            rf"(<!-- ficha:{chave}:inicio -->)(.*?)(<!-- ficha:{chave}:fim -->)", re.S)
-        if not padrao.search(texto):
-            faltando.append(chave)
-            continue
-        texto = padrao.sub(lambda m: f"{m.group(1)}\n\n{fn(d)}\n\n{m.group(3)}", texto)
-    if faltando:
-        print("aviso: marcadores ausentes no README:", ", ".join(faltando), file=sys.stderr)
+def preencher(texto):
     carimbo = datetime.now(timezone.utc).strftime("%d/%m/%Y %H:%M UTC")
     return re.sub(r"(<!-- ficha:carimbo:inicio -->).*?(<!-- ficha:carimbo:fim -->)",
                   rf"\g<1>{carimbo}\g<2>", texto, flags=re.S)
@@ -388,7 +342,7 @@ def main():
         antigo = f.read()
     d = derivar(dados)
     montar_svg(d)
-    novo = preencher(antigo, d)
+    novo = preencher(antigo)
     if novo == antigo:
         print("markdown sem alteracao (svg regravado)")
         return
