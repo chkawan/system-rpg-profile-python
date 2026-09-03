@@ -72,7 +72,7 @@ query($login: String!) {
                  orderBy: {field: PUSHED_AT, direction: DESC}) {
       totalCount
       nodes {
-        name pushedAt isPrivate stargazerCount forkCount
+        name pushedAt isPrivate stargazerCount forkCount homepageUrl
         primaryLanguage { name }
       }
     }
@@ -110,6 +110,7 @@ def buscar(login):
         "repos": [{
             "nome": r["name"], "push": r["pushedAt"], "privado": r["isPrivate"],
             "estrelas": r["stargazerCount"], "forks": r["forkCount"],
+            "tem_url": bool(r["homepageUrl"]),
             "ling": (r["primaryLanguage"] or {}).get("name"),
         } for r in u["repositories"]["nodes"]],
     }
@@ -129,6 +130,7 @@ def derivar(d):
     selados = sum(1 for r in repos if r["privado"])
     estrelas = sum(r["estrelas"] for r in repos)
     forks = sum(r["forks"] for r in repos)
+    com_url = sum(1 for r in repos if r["tem_url"])
     total_repos = d.get("repos_total", len(repos))
     anos = dias(d["criado"]) / 365.25
     recentes = sum(1 for r in repos if dias(r["push"]) < 90)
@@ -145,7 +147,7 @@ def derivar(d):
     nivel = max(1, min(99, round(escala(total_repos, 200, 40) +
                                  escala(estrelas, 5000, 35) + anos * 2)))
     return {**d, "selados": selados, "estrelas": estrelas, "forks": forks,
-            "total_repos": total_repos,
+            "com_url": com_url, "total_repos": total_repos,
             "anos": anos, "recentes": recentes, "lings": lings, "topo": topo,
             "nivel": nivel, "classe": CLASSES.get(topo, FALLBACK_CLASSE)}
 
@@ -187,7 +189,7 @@ CONQUISTAS = [
     ("Vigilia Ativa", "recentes", "repos ativos", "◆", [1, 2, 4, 6, 9, 13, 18, 25, 35, 50]),
     ("Linguagens Dominadas", lambda d: len(d["lings"]), "linguagens", "⬡", [1, 2, 3, 4, 6, 8, 10, 13, 16, 20]),
     ("Anos de Estrada", "anos", "anos", "⌛", [0.5, 1, 2, 3, 4, 5, 7, 9, 12, 15]),
-    ("Estrelas Recebidas", "estrelas", "estrelas", "★", [1, 5, 15, 35, 75, 150, 300, 600, 1200, 2500]),
+    ("Repositorios com URL", "com_url", "com url", "↗", [1, 2, 4, 6, 9, 13, 18, 25, 35, 50]),
 ]
 
 
@@ -314,7 +316,7 @@ def svg_medalha(cx, cy, r, simbolo, tier_cor, dark):
 
 
 def svg_conquistas(d, v):
-    itens = lista_conquistas(d)
+    itens = sorted(lista_conquistas(d), key=lambda item: item[4], reverse=True)
     slot = 848 / len(itens)
     base = CONQ_MEDALHA_CY + CONQ_MEDALHA_R
     out = []
