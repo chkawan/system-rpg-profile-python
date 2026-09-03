@@ -166,13 +166,12 @@ def derivar(d):
     total = sum(contagem.values()) or 1
     lings = sorted(({"nome": k, "n": v, "fatia": v / total} for k, v in contagem.items()),
                    key=lambda x: -x["n"])
-    topo = lings[0]["nome"] if lings else None
 
     nivel = max(1, min(99, round(escala(total_repos, 200, 40) +
                                  escala(estrelas, 5000, 35) + anos * 2)))
     return {**d, "selados": selados, "estrelas": estrelas,
             "com_url": com_url, "total_repos": total_repos,
-            "anos": anos, "recentes": recentes, "lings": lings, "topo": topo,
+            "anos": anos, "recentes": recentes, "lings": lings,
             "missoes": missoes, "nivel": nivel}
 
 
@@ -217,14 +216,6 @@ def img_icone(caminho, tamanho=32):
     return render
 
 
-def icone_trofeu(cx, cy, cor, furo):
-    return (
-        f'<path d="M {cx - 8},{cy - 10} h16 v6 a8,7 0 0 1 -16,0 Z" fill="{cor}"/>'
-        f'<path d="M {cx - 8},{cy - 8} h-4 a1,1 0 0 0 0,6 h4" fill="none" stroke="{cor}" stroke-width="2"/>'
-        f'<path d="M {cx + 8},{cy - 8} h4 a1,1 0 0 1 0,6 h-4" fill="none" stroke="{cor}" stroke-width="2"/>'
-        f'<rect x="{cx - 1.5}" y="{cy - 2}" width="3" height="7" fill="{cor}"/>'
-        f'<rect x="{cx - 7}" y="{cy + 5}" width="14" height="2.5" fill="{cor}"/>'
-    )
 
 
 
@@ -341,6 +332,9 @@ SAIDA_SVG = os.path.join(os.path.dirname(__file__), "..", "ficha", "ficha.svg")
 
 PAL_HP, PAL_MP, PAL_ST = "#8c2f2f", "#3f7a8c", "#6b8f3a"
 VELLUM, DIM = "#e6d3a3", "#8a7c62"
+# cor de destaque fixa, igual a do portfolio (kawandev.com.br) - nao muda
+# mais conforme a linguagem principal
+ACENTO = "#986dff"
 
 EQUIP_CARDS_Y, EQUIP_CARD_H = 458, 68
 PERG_TEXT_Y0, PERG_LINE_H = 580, 20
@@ -531,11 +525,9 @@ def svg_juramento(v):
 
 
 def montar_svg(d):
-    acento = CORES.get(d["topo"], "4f9ad8")
-    acento = acento if acento.startswith("#") else "#" + acento
-    ink, stone = tom(acento, 0.28, 6), tom(acento, 0.24, 12)
-    lit, dark = tom(acento, 0.22, 22), tom(acento, 0.3, 3)
-    gold = tom(acento, 0.9, 64)
+    ink, stone = tom(ACENTO, 0.28, 6), tom(ACENTO, 0.24, 12)
+    lit, dark = tom(ACENTO, 0.22, 22), tom(ACENTO, 0.3, 3)
+    gold = tom(ACENTO, 0.9, 64)
 
     attrs = atributos(d)
     pontos = {nome: valor for nome, valor, _ in attrs}
@@ -603,7 +595,7 @@ def montar_svg(d):
         ("HDR_ATRIBUTOS", 256, "ATRIBUTOS", img_icone("secoes/atributos.png", 26)),
         ("HDR_EQUIPAMENTO", 436, "EQUIPAMENTO", img_icone("secoes/equipamento.png", 26)),
         ("HDR_PERGAMINHO", 556, "PERGAMINHO DO AVENTUREIRO", img_icone("secoes/pergaminho.png", 26)),
-        ("HDR_CONQUISTAS", 762, "CONQUISTAS", icone_trofeu),
+        ("HDR_CONQUISTAS", 762, "CONQUISTAS", img_icone("secoes/conquista.png", 26)),
         ("HDR_MISSOES", 964, "MISSOES", img_icone("secoes/missoes.png", 26)),
         ("HDR_JURAMENTO", 1248, "JURAMENTO", img_icone("secoes/juramento.png", 26)),
         ("HDR_TAVERNA", 1356, "TAVERNA", img_icone("secoes/taverna.png", 26)),
