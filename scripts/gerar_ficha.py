@@ -174,13 +174,14 @@ SEM_TIER = ("Sem tier", "#5a5245")
 # as 5 conquistas que mais pesam pra quem esta avaliando um perfil pra
 # contratacao: consistencia, trabalho protegido/profissional, ferramental,
 # experiencia e projetos realmente publicados. nome, campo em d (ou
-# funcao), unidade, simbolo gravado na medalha, limiares dos 10 tiers
+# funcao), descricao curta do que faz upar, simbolo gravado na medalha,
+# limiares dos 10 tiers
 CONQUISTAS = [
-    ("Ritmo de Forja", "commits", "commits/ano", "⚡", [1, 50, 150, 300, 500, 750, 1000, 1500, 2500, 4000]),
-    ("Cofres Selados", "selados", "cofres", "⚿", [1, 2, 4, 7, 12, 20, 35, 55, 80, 120]),
-    ("Magias Dominadas", lambda d: len(d["lings"]), "magias", "⬡", [1, 2, 3, 4, 6, 8, 10, 13, 16, 20]),
-    ("Anos de Jornada", "anos", "anos", "⌛", [0.5, 1, 2, 3, 4, 5, 7, 9, 12, 15]),
-    ("Portais Abertos", "com_url", "portais", "↗", [1, 2, 4, 6, 9, 13, 18, 25, 35, 50]),
+    ("Ritmo de Forja", "commits", "commits no ultimo ano", "⚡", [1, 50, 150, 300, 500, 750, 1000, 1500, 2500, 4000]),
+    ("Cofres Selados", "selados", "repositorios privados", "⚿", [1, 2, 4, 7, 12, 20, 35, 55, 80, 120]),
+    ("Magias Dominadas", lambda d: len(d["lings"]), "linguagens diferentes", "⬡", [1, 2, 3, 4, 6, 8, 10, 13, 16, 20]),
+    ("Anos de Jornada", "anos", "anos de conta ativa", "⌛", [0.5, 1, 2, 3, 4, 5, 7, 9, 12, 15]),
+    ("Portais Abertos", "com_url", "repos com link no ar", "↗", [1, 2, 4, 6, 9, 13, 18, 25, 35, 50]),
 ]
 
 
@@ -208,9 +209,9 @@ def progresso(valor, tier_idx, limiares):
 
 def lista_conquistas(d):
     out = []
-    for nome, campo, unidade, simbolo, limiares in CONQUISTAS:
+    for nome, campo, descricao, simbolo, limiares in CONQUISTAS:
         valor = campo(d) if callable(campo) else d[campo]
-        out.append((nome, unidade, valor, simbolo, tier_de(valor, limiares), limiares))
+        out.append((nome, descricao, valor, simbolo, tier_de(valor, limiares), limiares))
     return out
 
 # ------------------------------------------------------------------ svg
@@ -329,7 +330,7 @@ def svg_conquistas(d, v):
     cy = CONQ_MEDALHA_CY
     barra_w = 110
     out = []
-    for i, (nome, unidade, valor, simbolo, tier_idx, limiares) in enumerate(itens):
+    for i, (nome, descricao, valor, simbolo, tier_idx, limiares) in enumerate(itens):
         cx = round(16 + slot * (i + 0.5))
         tier_nome, tier_cor = TIERS[tier_idx] if tier_idx >= 0 else SEM_TIER
         out.append(svg_medalha(cx, cy, simbolo, tier_cor, v["DARK"]))
@@ -344,6 +345,8 @@ def svg_conquistas(d, v):
             f'text-anchor="middle" fill="{v["DIM"]}">{rotulo}</text>'
             f'<rect x="{bx:.0f}" y="{cy + 90}" width="{barra_w}" height="6" fill="{v["DARK"]}"/>'
             f'<rect x="{bx:.0f}" y="{cy + 90}" width="{barra_w * pct:.0f}" height="6" fill="{tier_cor}"/>'
+            f'<text x="{cx}" y="{cy + 112}" font-size="8.5" font-style="italic" '
+            f'text-anchor="middle" fill="{v["DIM"]}">{escapar(descricao)}</text>'
         )
     return "".join(out)
 
@@ -370,15 +373,23 @@ def montar_svg(d):
     lit, dark = tom(acento, 0.22, 22), tom(acento, 0.3, 3)
     gold = tom(acento, 0.9, 64)
 
-    vida_max = 40 + d["total_repos"] * 4
-    mana_max = 30 + max(d["estrelas"], 20) * 2
+    attrs = atributos(d)
+    pontos = {nome: valor for nome, valor, _ in attrs}
+
+    # vida/mana/vigor sobem de teto junto com o atributo que os sustenta,
+    # igual em RPG de mesa: VIDA vem de Constituicao (folego), MANA vem de
+    # Inteligencia (repertorio de linguagens) e VIGOR vem de Forca (musculo
+    # pra sustentar o ritmo). O preenchimento atual usa um sinal recente
+    # relacionado, sempre limitado a esse teto.
+    vida_max = pontos["Constituicao"] * 25
+    mana_max = pontos["Inteligencia"] * 25
+    vigor_max = pontos["Forca"] * 25
     vitais = [
-        ("VIDA", 40 + d["recentes"] * 4, vida_max, PAL_HP),
-        ("MANA", 30 + d["estrelas"] * 2, mana_max, PAL_MP),
-        ("VIGOR", min(d["commits"], 1000), 1000, PAL_ST),
+        ("VIDA", min(vida_max, 40 + d["recentes"] * 15), vida_max, PAL_HP),
+        ("MANA", min(mana_max, 30 + d["estrelas"] * 3), mana_max, PAL_MP),
+        ("VIGOR", min(vigor_max, d["commits"]), vigor_max, PAL_ST),
         ("EXP", d["nivel"] % 10 * 100 + 40, 1000, gold),
     ]
-    attrs = atributos(d)
 
     v = {
         "INK": ink, "STONE": stone, "LIT": lit, "DARK": dark,
