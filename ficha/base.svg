@@ -63,7 +63,6 @@
 
   <!-- divisor da secao -->
   {{HDR_ATRIBUTOS}}
-  <rect x="16" y="264" width="848" height="2" fill="{{GOLD}}"/>
 
   <!-- seis campos de atributo: trilho escuro + pips recortados -->
   <rect x="16" y="298" width="380" height="10" fill="{{DARK}}"/>
@@ -102,34 +101,29 @@
   <text x="832" y="378" font-size="14" font-weight="bold" text-anchor="end" fill="{{GOLD}}">{{V_F}}</text>
   <text x="452" y="410" font-size="10.5" fill="{{DIM}}">{{D_F}}</text>
 
-  <!-- equipamento -->
+  <!-- equipamento + habilidades: duas secoes lado a lado -->
   {{HDR_EQUIPAMENTO}}
-  <rect x="16" y="444" width="848" height="2" fill="{{GOLD}}"/>
+  {{HDR_HABILIDADES}}
   {{BLOCO_EQUIP}}
 
   <!-- pergaminho do aventureiro -->
   {{HDR_PERGAMINHO}}
-  <rect x="16" y="689" width="848" height="2" fill="{{GOLD}}"/>
   {{BLOCO_PERGAMINHO}}
 
   <!-- conquistas -->
   {{HDR_CONQUISTAS}}
-  <rect x="16" y="895" width="848" height="2" fill="{{GOLD}}"/>
   {{BLOCO_FEITOS}}
 
   <!-- missoes -->
   {{HDR_MISSOES}}
-  <rect x="16" y="1097" width="848" height="2" fill="{{GOLD}}"/>
   {{BLOCO_MISSOES}}
 
   <!-- juramento -->
   {{HDR_JURAMENTO}}
-  <rect x="16" y="1379" width="848" height="2" fill="{{GOLD}}"/>
   {{BLOCO_JURAMENTO}}
 
   <!-- taverna: so o titulo, os links ficam no README (svg via <img> nao e clicavel) -->
   {{HDR_TAVERNA}}
-  <rect x="16" y="1483" width="848" height="2" fill="{{GOLD}}"/>
 
   <rect width="880" height="1520" fill="url(#scan)"/>
 </svg>

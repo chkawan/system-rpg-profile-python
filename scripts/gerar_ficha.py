@@ -271,15 +271,16 @@ def determinar_classe(pontos, vida_pct, mana_pct, vigor_pct):
     return max(candidatos, key=candidatos.get)
 
 
-def svg_cabecalho(y, titulo, icone, gold):
-    """Padrao de cabecalho de secao: icone a esquerda, centralizado com o
-    titulo, que abre com a primeira letra maior (a linha divisoria vem
-    logo abaixo, ja fixa no template)."""
+def svg_cabecalho(y, titulo, icone, gold, x0=16, largura=848):
+    """Padrao de cabecalho de secao: icone a esquerda, titulo que abre com
+    a primeira letra maior, linha divisoria embutida logo abaixo. x0/largura
+    permitem um cabecalho de meia largura (duas secoes lado a lado)."""
     primeira, resto = titulo[0], titulo[1:]
     return (
-        icone(32, y - 6, gold, gold)
-        + f'<text x="52" y="{y}" font-weight="bold" fill="{gold}">'
+        icone(x0 + 16, y - 6, gold, gold)
+        + f'<text x="{x0 + 36}" y="{y}" font-weight="bold" fill="{gold}">'
         f'<tspan font-size="20">{primeira}</tspan><tspan font-size="14">{resto}</tspan></text>'
+        f'<rect x="{x0}" y="{y + 8}" width="{largura}" height="2" fill="{gold}"/>'
     )
 
 
@@ -352,7 +353,6 @@ VELLUM, DIM = "#e6d3a3", "#8a7c62"
 # mais conforme a linguagem principal
 ACENTO = "#986dff"
 
-EQUIP_LABEL_Y = 460
 EQUIP_ROWS_Y0, EQUIP_ROW_H = 480, 26
 PERG_TEXT_Y0, PERG_LINE_H = 705, 20
 PERG_TABLE_Y0, PERG_ROW_H = 785, 22
@@ -404,9 +404,6 @@ def escapar(texto):
     return str(texto).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
-ICONE_HABILIDADES = img_icone("secoes/habilidades.png", 14)
-
-
 def svg_slot(cx, cy, w, nome, cor_hex, v):
     """Um slot de equipamento: moldura + preenchimento na cor da ferramenta
     + nome embaixo. Sem icone proprio (nao temos um por ferramenta), entao
@@ -423,19 +420,13 @@ def svg_slot(cx, cy, w, nome, cor_hex, v):
 
 
 def svg_equipamento(d, v, icone_classe_fundo):
-    """Duas colunas: Armaduras - um boneco de equipamento em cruz (elmo,
+    """Duas secoes lado a lado: EQUIPAMENTO - um boneco em cruz (elmo,
     arma, armadura, arma, bota) com o icone da classe atual desenhado
     atras, meio transparente, como o personagem que veste tudo isso - e
-    Habilidades (linguagem = skill, nivel = % dos repos, dado real)."""
+    HABILIDADES (linguagem = skill, nivel = % dos repos, dado real)."""
     x_hab = 452
     largura_col = 396
-    out = [
-        f'<text x="16" y="{EQUIP_LABEL_Y}" font-size="11" font-weight="bold" '
-        f'fill="{v["GOLD"]}">ARMADURAS</text>',
-        ICONE_HABILIDADES(x_hab + 7, EQUIP_LABEL_Y - 4, v["GOLD"], v["GOLD"]),
-        f'<text x="{x_hab + 18}" y="{EQUIP_LABEL_Y}" font-size="11" font-weight="bold" '
-        f'fill="{v["GOLD"]}">HABILIDADES</text>',
-    ]
+    out = []
 
     cx_arm, w_slot, gap_h = 214, 40, 14
     cy_elmo, cy_meio, cy_bota = 500, 556, 612
@@ -640,16 +631,17 @@ def montar_svg(d):
     v["BLOCO_JURAMENTO"] = svg_juramento(v)
 
     cabecalhos = [
-        ("HDR_ATRIBUTOS", 256, "ATRIBUTOS", img_icone("secoes/atributos.png", 26)),
-        ("HDR_EQUIPAMENTO", 436, "EQUIPAMENTO", img_icone("secoes/equipamento.png", 26)),
-        ("HDR_PERGAMINHO", 681, "PERGAMINHO DO AVENTUREIRO", img_icone("secoes/pergaminho.png", 26)),
-        ("HDR_CONQUISTAS", 887, "CONQUISTAS", img_icone("secoes/conquista.png", 26)),
-        ("HDR_MISSOES", 1089, "MISSOES", img_icone("secoes/missoes.png", 26)),
-        ("HDR_JURAMENTO", 1371, "JURAMENTO", img_icone("secoes/juramento.png", 26)),
-        ("HDR_TAVERNA", 1475, "TAVERNA", img_icone("secoes/taverna.png", 26)),
+        ("HDR_ATRIBUTOS", 256, "ATRIBUTOS", img_icone("secoes/atributos.png", 26), 16, 848),
+        ("HDR_EQUIPAMENTO", 436, "EQUIPAMENTO", img_icone("secoes/equipamento.png", 26), 16, 396),
+        ("HDR_HABILIDADES", 436, "HABILIDADES", img_icone("secoes/habilidades.png", 26), 452, 396),
+        ("HDR_PERGAMINHO", 681, "PERGAMINHO DO AVENTUREIRO", img_icone("secoes/pergaminho.png", 26), 16, 848),
+        ("HDR_CONQUISTAS", 887, "CONQUISTAS", img_icone("secoes/conquista.png", 26), 16, 848),
+        ("HDR_MISSOES", 1089, "MISSOES", img_icone("secoes/missoes.png", 26), 16, 848),
+        ("HDR_JURAMENTO", 1371, "JURAMENTO", img_icone("secoes/juramento.png", 26), 16, 848),
+        ("HDR_TAVERNA", 1475, "TAVERNA", img_icone("secoes/taverna.png", 26), 16, 848),
     ]
-    for chave, y, titulo, icone in cabecalhos:
-        v[chave] = svg_cabecalho(y, titulo, icone, gold)
+    for chave, y, titulo, icone, x0, largura in cabecalhos:
+        v[chave] = svg_cabecalho(y, titulo, icone, gold, x0, largura)
 
     with open(BASE_SVG, encoding="utf-8") as f:
         svg = f.read()
