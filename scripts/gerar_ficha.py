@@ -3,7 +3,7 @@ Preenche os blocos da ficha dentro do README.md.
 
 O design NAO mora aqui. Ele mora no README e no SVG. Este script busca os
 dados, monta o SVG completo (banner, vitais, atributos, equipamento,
-pergaminho, conquistas e grimorio) e troca o carimbo de data entre os marcadores
+pergaminho e conquistas) e troca o carimbo de data entre os marcadores
 <!-- ficha:carimbo:inicio --> e <!-- ficha:carimbo:fim --> no README.
 
     python scripts/gerar_ficha.py            # busca no GitHub (usa GH_TOKEN)
@@ -49,18 +49,6 @@ BIO_TABELA = [
     ("Campo de batalha", "Sistemas completos, do banco à tela"),
     ("Marca registrada", "Deploy em cloud e domínio próprio por projeto"),
 ]
-GRIMORIO = [
-    ("Conjuração", [
-        ("Python", "3572A5"), ("Django", "092E20"),
-        ("PHP", "4F5D95"), ("APIs REST", "005571"),
-    ]),
-    ("Câmaras de dados", [
-        ("MySQL", "4479A1"), ("PostgreSQL", "336791"),
-    ]),
-    ("Forja", [
-        ("AWS", "232F3E"), ("Git", "F05032"), ("Power BI", "F2C811"),
-    ]),
-]
 
 QUERY = """
 query($login: String!) {
@@ -72,7 +60,7 @@ query($login: String!) {
                  orderBy: {field: PUSHED_AT, direction: DESC}) {
       totalCount
       nodes {
-        name pushedAt isPrivate stargazerCount forkCount homepageUrl
+        name pushedAt isPrivate stargazerCount homepageUrl
         primaryLanguage { name }
       }
     }
@@ -109,8 +97,7 @@ def buscar(login):
         "repos_total": u["repositories"]["totalCount"],
         "repos": [{
             "nome": r["name"], "push": r["pushedAt"], "privado": r["isPrivate"],
-            "estrelas": r["stargazerCount"], "forks": r["forkCount"],
-            "tem_url": bool(r["homepageUrl"]),
+            "estrelas": r["stargazerCount"], "tem_url": bool(r["homepageUrl"]),
             "ling": (r["primaryLanguage"] or {}).get("name"),
         } for r in u["repositories"]["nodes"]],
     }
@@ -129,7 +116,6 @@ def derivar(d):
     repos = d["repos"]
     selados = sum(1 for r in repos if r["privado"])
     estrelas = sum(r["estrelas"] for r in repos)
-    forks = sum(r["forks"] for r in repos)
     com_url = sum(1 for r in repos if r["tem_url"])
     total_repos = d.get("repos_total", len(repos))
     anos = dias(d["criado"]) / 365.25
@@ -146,21 +132,26 @@ def derivar(d):
 
     nivel = max(1, min(99, round(escala(total_repos, 200, 40) +
                                  escala(estrelas, 5000, 35) + anos * 2)))
-    return {**d, "selados": selados, "estrelas": estrelas, "forks": forks,
+    return {**d, "selados": selados, "estrelas": estrelas,
             "com_url": com_url, "total_repos": total_repos,
             "anos": anos, "recentes": recentes, "lings": lings, "topo": topo,
             "nivel": nivel, "classe": CLASSES.get(topo, FALLBACK_CLASSE)}
 
 
 def atributos(d):
+    # cada atributo fisico/mental do RPG mapeado pro sinal de programacao
+    # mais parecido com o que ele mede na mesa: forca e musculo (volume
+    # erguido), destreza e reflexo (velocidade de reacao), constituicao e
+    # folego (tempo aguentando o ritmo), inteligencia e estudo (repertorio
+    # de linguagens), sabedoria e disciplina/forca de vontade (constancia
+    # de commits) e carisma e presenca social (quem te segue).
     return [
         ("Forca", escala(d["total_repos"], 200),
-         f'{d["total_repos"]} repositorios erguidos' +
-         (f', {d["selados"]} selados' if d["selados"] else "")),
-        ("Destreza", escala(len(d["lings"]), 20), f'{len(d["lings"])} linguagens empunhadas'),
-        ("Constituicao", escala(d["anos"], 15), f'{d["anos"]:.1f} anos de estrada'),
-        ("Inteligencia", escala(d["estrelas"], 5000), f'{d["estrelas"]} estrelas recebidas'),
-        ("Sabedoria", escala(d["forks"], 1000), f'{d["forks"]} obras copiadas por outros'),
+         f'{d["total_repos"]} repositorios erguidos'),
+        ("Destreza", escala(d["recentes"], 50), f'{d["recentes"]} repositorios com push recente'),
+        ("Constituicao", escala(d["anos"], 15), f'{d["anos"]:.1f} anos de estrada sem parar'),
+        ("Inteligencia", escala(len(d["lings"]), 20), f'{len(d["lings"])} linguagens estudadas'),
+        ("Sabedoria", escala(d["commits"], 3000), f'{d["commits"]} commits de disciplina no ano'),
         ("Carisma", escala(d["seguidores"], 5000), f'{d["seguidores"]} seguidores no reino'),
     ]
 
@@ -181,15 +172,15 @@ TIERS = [
 SEM_TIER = ("Sem tier", "#5a5245")
 
 # as 5 conquistas que mais pesam pra quem esta avaliando um perfil pra
-# contratacao: atividade recente, consistencia, ferramental, experiencia
-# e validacao da comunidade. nome, campo em d (ou funcao), unidade,
-# simbolo gravado na medalha, limiares dos 10 tiers
+# contratacao: consistencia, trabalho protegido/profissional, ferramental,
+# experiencia e projetos realmente publicados. nome, campo em d (ou
+# funcao), unidade, simbolo gravado na medalha, limiares dos 10 tiers
 CONQUISTAS = [
-    ("Contribuicoes no Ano", "commits", "commits/ano", "⚡", [1, 50, 150, 300, 500, 750, 1000, 1500, 2500, 4000]),
-    ("Vigilia Ativa", "recentes", "repos ativos", "◆", [1, 2, 4, 6, 9, 13, 18, 25, 35, 50]),
-    ("Linguagens Dominadas", lambda d: len(d["lings"]), "linguagens", "⬡", [1, 2, 3, 4, 6, 8, 10, 13, 16, 20]),
-    ("Anos de Estrada", "anos", "anos", "⌛", [0.5, 1, 2, 3, 4, 5, 7, 9, 12, 15]),
-    ("Repositorios com URL", "com_url", "com url", "↗", [1, 2, 4, 6, 9, 13, 18, 25, 35, 50]),
+    ("Ritmo de Forja", "commits", "commits/ano", "⚡", [1, 50, 150, 300, 500, 750, 1000, 1500, 2500, 4000]),
+    ("Cofres Selados", "selados", "cofres", "⚿", [1, 2, 4, 7, 12, 20, 35, 55, 80, 120]),
+    ("Magias Dominadas", lambda d: len(d["lings"]), "magias", "⬡", [1, 2, 3, 4, 6, 8, 10, 13, 16, 20]),
+    ("Anos de Jornada", "anos", "anos", "⌛", [0.5, 1, 2, 3, 4, 5, 7, 9, 12, 15]),
+    ("Portais Abertos", "com_url", "portais", "↗", [1, 2, 4, 6, 9, 13, 18, 25, 35, 50]),
 ]
 
 
@@ -199,6 +190,20 @@ def tier_de(valor, limiares):
         if valor >= limite:
             idx = i
     return idx
+
+
+def formatar(n):
+    return f"{n:.1f}" if isinstance(n, float) else str(round(n))
+
+
+def progresso(valor, tier_idx, limiares):
+    """Fracao (0-1) e rotulo tipo '14/18' do avanco dentro do tier atual."""
+    if tier_idx >= len(limiares) - 1:
+        return 1.0, "MAX"
+    baixo = limiares[tier_idx] if tier_idx >= 0 else 0
+    alto = limiares[tier_idx + 1]
+    pct = max(0.0, min(1.0, (valor - baixo) / (alto - baixo))) if alto > baixo else 1.0
+    return pct, f"{formatar(valor)}/{formatar(alto)}"
 
 
 def lista_conquistas(d):
@@ -218,10 +223,8 @@ VELLUM, DIM = "#e6d3a3", "#8a7c62"
 
 EQUIP_CARDS_Y, EQUIP_CARD_H = 458, 68
 PERG_TEXT_Y0, PERG_LINE_H = 580, 20
-PERG_TABLE_Y0, PERG_ROW_H = 640, 22
-CONQ_MEDALHA_CY, CONQ_MEDALHA_R = 798, 34
-GRIM_GROUPS_Y0 = 940
-GRIM_LABEL_TO_PILLS, GRIM_PILL_H, GRIM_GROUP_GAP = 10, 24, 22
+PERG_TABLE_Y0, PERG_ROW_H = 660, 22
+CONQ_MEDALHA_CY = 816
 
 
 def tom(hexcor, sat_mul, luz):
@@ -305,33 +308,42 @@ def svg_equipamento(d, v):
     return "".join(out)
 
 
-def svg_medalha(cx, cy, r, simbolo, tier_cor, dark):
-    """Moeda de tier: aro escuro, face na cor do tier, simbolo gravado (tom mais escuro do mesmo matiz)."""
+def svg_medalha(cx, cy, simbolo, tier_cor, dark):
+    """Brasao de condecoracao: escudo com aro na cor do tier, face preenchida
+    e simbolo gravado (tom mais escuro do mesmo matiz da face)."""
     escuro = tom(tier_cor, 1.0, 16)
+    fora = (f'M {cx - 28},{cy - 32} L {cx + 28},{cy - 32} L {cx + 28},{cy + 6} '
+            f'Q {cx + 28},{cy + 30} {cx},{cy + 40} Q {cx - 28},{cy + 30} {cx - 28},{cy + 6} Z')
+    dentro = (f'M {cx - 23},{cy - 27} L {cx + 23},{cy - 27} L {cx + 23},{cy + 3} '
+              f'Q {cx + 23},{cy + 24} {cx},{cy + 33} Q {cx - 23},{cy + 24} {cx - 23},{cy + 3} Z')
     return (
-        f'<circle cx="{cx}" cy="{cy}" r="{r}" fill="{dark}" stroke="{tier_cor}" stroke-width="3"/>'
-        f'<circle cx="{cx}" cy="{cy}" r="{r - 6}" fill="{tier_cor}"/>'
-        f'<text x="{cx}" y="{cy + 11}" font-size="30" text-anchor="middle" fill="{escuro}">{simbolo}</text>'
+        f'<path d="{fora}" fill="{dark}" stroke="{tier_cor}" stroke-width="3"/>'
+        f'<path d="{dentro}" fill="{tier_cor}"/>'
+        f'<text x="{cx}" y="{cy + 2}" font-size="26" text-anchor="middle" fill="{escuro}">{simbolo}</text>'
     )
 
 
 def svg_conquistas(d, v):
     itens = sorted(lista_conquistas(d), key=lambda item: item[4], reverse=True)
     slot = 848 / len(itens)
-    base = CONQ_MEDALHA_CY + CONQ_MEDALHA_R
+    cy = CONQ_MEDALHA_CY
+    barra_w = 110
     out = []
     for i, (nome, unidade, valor, simbolo, tier_idx, limiares) in enumerate(itens):
         cx = round(16 + slot * (i + 0.5))
         tier_nome, tier_cor = TIERS[tier_idx] if tier_idx >= 0 else SEM_TIER
-        out.append(svg_medalha(cx, CONQ_MEDALHA_CY, CONQ_MEDALHA_R, simbolo, tier_cor, v["DARK"]))
-        valor_fmt = f"{valor:.1f}" if isinstance(valor, float) else str(valor)
+        out.append(svg_medalha(cx, cy, simbolo, tier_cor, v["DARK"]))
+        pct, rotulo = progresso(valor, tier_idx, limiares)
+        bx = cx - barra_w / 2
         out.append(
-            f'<text x="{cx}" y="{base + 16}" font-size="12" font-weight="bold" '
+            f'<text x="{cx}" y="{cy + 56}" font-size="12" font-weight="bold" '
             f'text-anchor="middle" fill="{v["VELLUM"]}">{escapar(nome)}</text>'
-            f'<text x="{cx}" y="{base + 30}" font-size="10" font-weight="bold" '
+            f'<text x="{cx}" y="{cy + 70}" font-size="10" font-weight="bold" '
             f'text-anchor="middle" fill="{tier_cor}">{tier_nome.upper()}</text>'
-            f'<text x="{cx}" y="{base + 44}" font-size="9.5" '
-            f'text-anchor="middle" fill="{v["DIM"]}">{valor_fmt} {escapar(unidade)}</text>'
+            f'<text x="{cx}" y="{cy + 84}" font-size="9" font-weight="bold" '
+            f'text-anchor="middle" fill="{v["DIM"]}">{rotulo}</text>'
+            f'<rect x="{bx:.0f}" y="{cy + 90}" width="{barra_w}" height="6" fill="{v["DARK"]}"/>'
+            f'<rect x="{bx:.0f}" y="{cy + 90}" width="{barra_w * pct:.0f}" height="6" fill="{tier_cor}"/>'
         )
     return "".join(out)
 
@@ -348,34 +360,6 @@ def svg_pergaminho(v):
             f'<text x="16" y="{y}" font-size="10.5" fill="{v["DIM"]}">{escapar(rotulo).upper()}</text>'
             f'<text x="210" y="{y}" font-size="12" fill="{v["VELLUM"]}">{escapar(valor)}</text>'
         )
-    return "".join(out)
-
-
-def svg_pill(x, y, texto, cor_hex):
-    cor = cor_hex if cor_hex.startswith("#") else "#" + cor_hex
-    r, g, b = (int(cor[i:i + 2], 16) for i in (1, 3, 5))
-    luminancia = 0.299 * r + 0.587 * g + 0.114 * b
-    texto_cor = "#1b1f22" if luminancia > 150 else "#f2ead2"
-    largura = round(20 + len(texto) * 6.6)
-    svg = (f'<rect x="{x}" y="{y}" width="{largura}" height="{GRIM_PILL_H}" rx="4" fill="{cor}"/>'
-           f'<text x="{x + largura / 2:.0f}" y="{y + 16}" font-size="11" text-anchor="middle" '
-           f'fill="{texto_cor}">{texto}</text>')
-    return svg, largura
-
-
-def svg_grimorio(v):
-    out = []
-    y_label = GRIM_GROUPS_Y0
-    for nome_grupo, itens in GRIMORIO:
-        out.append(f'<text x="16" y="{y_label}" font-size="12" font-weight="bold" '
-                   f'fill="{v["VELLUM"]}">{escapar(nome_grupo)}</text>')
-        y_pill = y_label + GRIM_LABEL_TO_PILLS
-        x = 16
-        for nome, cor in itens:
-            pill_svg, largura = svg_pill(x, y_pill, escapar(nome), cor)
-            out.append(pill_svg)
-            x += largura + 8
-        y_label = y_pill + GRIM_PILL_H + GRIM_GROUP_GAP
     return "".join(out)
 
 
@@ -403,7 +387,7 @@ def montar_svg(d):
         "CLASSE": f'{escapar(d["classe"][0])} - {escapar(d["classe"][1])}',
         "LINHA": " . ".join(filter(None, [
             escapar(d["local"]), f'jornada iniciada em {d["criado"][:4]}',
-            f'{d["total_repos"]} obras' + (f', {d["selados"]} seladas' if d["selados"] else ""),
+            f'{d["total_repos"]} obras',
         ])),
         "SELO": selo(d["login"], 34, 30, 8, gold),
     }
@@ -423,7 +407,6 @@ def montar_svg(d):
     v["BLOCO_EQUIP"] = svg_equipamento(d, v)
     v["BLOCO_PERGAMINHO"] = svg_pergaminho(v)
     v["BLOCO_FEITOS"] = svg_conquistas(d, v)
-    v["BLOCO_GRIMORIO"] = svg_grimorio(v)
 
     with open(BASE_SVG, encoding="utf-8") as f:
         svg = f.read()
