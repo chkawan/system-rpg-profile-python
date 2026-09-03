@@ -4,8 +4,6 @@
 
 </div>
 
----
-
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-Christopher_Kawan-0077B5?style=flat-square&logo=linkedin&logoColor=white "Conversa profissional e vagas")](https://www.linkedin.com/in/ch-kawan/)
 [![Email](https://img.shields.io/badge/Email-ch__kawan@outlook.com-D14836?style=flat-square&logo=maildotru&logoColor=white "Melhor canal para propostas e dúvidas técnicas")](mailto:ch_kawan@outlook.com)
 [![Portfólio](https://img.shields.io/badge/Portf%C3%B3lio-kawandev.com.br-3572A5?style=flat-square&logo=vercel&logoColor=white "Projetos no ar, cada um em seu subdomínio")](https://www.kawandev.com.br/)
