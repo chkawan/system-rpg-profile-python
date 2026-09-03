@@ -140,11 +140,12 @@ def nome_missao(nome_repo):
 
 def selecionar_missoes(repos, login, max_privadas=6, max_publicas=4):
     """Repos privados viram as missoes principais (projetos pessoais de
-    verdade); publicos completam a lista. Exclui o repo de perfil (README)."""
+    verdade), todos entram. Publico so entra se tiver URL - sem link no ar
+    nao conta como missao publica. Exclui o repo de perfil (README)."""
     candidatos = [r for r in repos if r["nome"].lower() != login.lower()]
     privadas = sorted((r for r in candidatos if r["privado"]),
                        key=lambda r: r["push"], reverse=True)[:max_privadas]
-    publicas = sorted((r for r in candidatos if not r["privado"]),
+    publicas = sorted((r for r in candidatos if not r["privado"] and r["tem_url"]),
                        key=lambda r: r["push"], reverse=True)[:max_publicas]
     return privadas + publicas
 
@@ -407,19 +408,21 @@ def svg_missoes(d, v):
     for i, r in enumerate(d["missoes"]):
         y = MISSOES_Y0 + i * MISSOES_ROW_H
         concluida = r["tem_url"]
-        cor_status = v["GOLD"] if concluida else v["DIM"]
-        out.append(svg_icone_missao(16, y, concluida, cor_status))
+        # linha concluida usa uma cor so em todas as colunas (dourado);
+        # em andamento usa a paleta neutra padrao
+        cor_forte = v["GOLD"] if concluida else v["VELLUM"]
+        cor_fraca = v["GOLD"] if concluida else v["DIM"]
+        out.append(svg_icone_missao(16, y, concluida, cor_fraca))
         nome = truncar(nome_missao(r["nome"]), 24)
-        cor_nome = v["GOLD"] if concluida else v["VELLUM"]
-        out.append(f'<text x="40" y="{y}" font-size="12" font-weight="bold" fill="{cor_nome}">{escapar(nome)}</text>')
+        out.append(f'<text x="40" y="{y}" font-size="12" font-weight="bold" fill="{cor_forte}">{escapar(nome)}</text>')
         ling = r["ling"] or "-"
         cor_arma = CORES.get(ling, "8a7c62")
         cor_arma = cor_arma if cor_arma.startswith("#") else "#" + cor_arma
         out.append(f'<rect x="230" y="{y - 9}" width="10" height="10" fill="{cor_arma}"/>')
-        out.append(f'<text x="246" y="{y}" font-size="9.5" fill="{v["DIM"]}">{escapar(truncar(ling, 12))}</text>')
+        out.append(f'<text x="246" y="{y}" font-size="9.5" fill="{cor_fraca}">{escapar(truncar(ling, 12))}</text>')
         if r["descricao"]:
             desc = escapar(truncar(r["descricao"], 66))
-            out.append(f'<text x="340" y="{y}" font-size="10" font-style="italic" fill="{v["DIM"]}">{desc}</text>')
+            out.append(f'<text x="340" y="{y}" font-size="10" font-style="italic" fill="{cor_fraca}">{desc}</text>')
     return "".join(out)
 
 
