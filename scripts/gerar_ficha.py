@@ -30,9 +30,16 @@ CORES = {
 # armaduras: ferramentas/plataformas do dia a dia - curado a mao porque a
 # API do GitHub nao da esse nivel de detalhe (framework, nuvem, BI...),
 # diferente de habilidades (linguagem), que vem direto dos repos
+# boneco de equipamento: 5 slots num "+" (elmo em cima, arma de cada lado,
+# armadura e bota no centro/baixo), igual o paper-doll de RPG - cada slot
+# mapeado pra uma ferramenta do dia a dia, curado a mao (a API do GitHub
+# nao da esse nivel de detalhe de stack)
 ARMADURAS = [
-    ("Django", "092E20"), ("PostgreSQL", "336791"), ("MySQL", "4479A1"),
-    ("AWS", "232F3E"), ("Git", "F05032"), ("Power BI", "F2C811"), ("APIs REST", "005571"),
+    ("elmo", "AWS", "232F3E"),
+    ("arma_esq", "Git", "F05032"),
+    ("armadura", "Django", "092E20"),
+    ("arma_dir", "APIs REST", "005571"),
+    ("bota", "PostgreSQL", "336791"),
 ]
 
 # conteudo estatico do "Pergaminho do aventureiro" e do "Grimorio" - nao vem
@@ -230,19 +237,22 @@ def img_icone(caminho, tamanho=32):
 # nao carrega mais titulo de "encantador de serpentes"): vem de qual
 # atributo (somado ao vital que ele sustenta, onde existir) mais se
 # destaca. cada chave: titulo, complemento e icone proprios.
+# o arquivo (nao um icone(cx,cy,cor,furo) ja pronto) porque a classe
+# ilustra tanto o retrato pequeno no banner quanto o "boneco" de fundo,
+# grande, atras do equipamento - dois tamanhos, mesmo desenho
 CLASSE_TITULOS = {
     "guerreiro": ("Guerreiro, o Forjador",
-                  "ergue tudo na base da forca bruta", img_icone("class/guerreiro.png", 64)),
+                  "ergue tudo na base da forca bruta", "class/guerreiro.png"),
     "arqueiro": ("Arqueiro, o Cacador de Bugs",
-                 "acerta de longe, sem falhar", img_icone("class/arqueiro.png", 64)),
+                 "acerta de longe, sem falhar", "class/arqueiro.png"),
     "aventureiro": ("Aventureiro, o Sobrevivente",
-                     "sobrevive a qualquer legado", img_icone("class/aventureiro.png", 64)),
+                     "sobrevive a qualquer legado", "class/aventureiro.png"),
     "mago": ("Mago, o Tecelao",
-             "tece logica onde so havia caos", img_icone("class/mago.png", 64)),
+             "tece logica onde so havia caos", "class/mago.png"),
     "curandeiro": ("Curandeiro, o Guardiao",
-                   "mantem tudo de pe", img_icone("class/healer.png", 64)),
+                   "mantem tudo de pe", "class/healer.png"),
     "ladino": ("Ladino, o Explorador",
-               "acha a brecha que ninguem viu", img_icone("class/ladino.png", 64)),
+               "acha a brecha que ninguem viu", "class/ladino.png"),
 }
 
 
@@ -397,26 +407,45 @@ def escapar(texto):
 ICONE_HABILIDADES = img_icone("secoes/habilidades.png", 14)
 
 
-def svg_equipamento(d, v):
-    """Duas colunas: Armaduras (ferramentas curadas, sem stat porque nao
-    tem esse dado) e Habilidades (linguagem = skill, nivel = % dos repos -
-    dado real, direto do GitHub)."""
-    x_arm, x_hab = 16, 452
+def svg_slot(cx, cy, w, nome, cor_hex, v):
+    """Um slot de equipamento: moldura + preenchimento na cor da ferramenta
+    + nome embaixo. Sem icone proprio (nao temos um por ferramenta), entao
+    o nome faz esse papel."""
+    cor = cor_hex if cor_hex.startswith("#") else "#" + cor_hex
+    r = w / 2
+    return (
+        f'<rect x="{cx - r:.0f}" y="{cy - r:.0f}" width="{w}" height="{w}" rx="4" '
+        f'fill="{v["DARK"]}" stroke="{v["GOLD"]}" stroke-width="1.5"/>'
+        f'<rect x="{cx - r + 4:.0f}" y="{cy - r + 4:.0f}" width="{w - 8}" height="{w - 8}" rx="2" fill="{cor}"/>'
+        f'<text x="{cx:.0f}" y="{cy + r + 11:.0f}" font-size="8.5" text-anchor="middle" '
+        f'fill="{v["DIM"]}">{escapar(nome)}</text>'
+    )
+
+
+def svg_equipamento(d, v, icone_classe_fundo):
+    """Duas colunas: Armaduras - um boneco de equipamento em cruz (elmo,
+    arma, armadura, arma, bota) com o icone da classe atual desenhado
+    atras, meio transparente, como o personagem que veste tudo isso - e
+    Habilidades (linguagem = skill, nivel = % dos repos, dado real)."""
+    x_hab = 452
     largura_col = 396
     out = [
-        f'<text x="{x_arm}" y="{EQUIP_LABEL_Y}" font-size="11" font-weight="bold" '
+        f'<text x="16" y="{EQUIP_LABEL_Y}" font-size="11" font-weight="bold" '
         f'fill="{v["GOLD"]}">ARMADURAS</text>',
         ICONE_HABILIDADES(x_hab + 7, EQUIP_LABEL_Y - 4, v["GOLD"], v["GOLD"]),
         f'<text x="{x_hab + 18}" y="{EQUIP_LABEL_Y}" font-size="11" font-weight="bold" '
         f'fill="{v["GOLD"]}">HABILIDADES</text>',
     ]
 
-    for i, (nome, cor) in enumerate(ARMADURAS):
-        y = EQUIP_ROWS_Y0 + i * EQUIP_ROW_H
-        out.append(
-            f'<rect x="{x_arm}" y="{y - 9}" width="10" height="10" fill="#{cor}"/>'
-            f'<text x="{x_arm + 16}" y="{y}" font-size="11.5" fill="{v["VELLUM"]}">{escapar(nome)}</text>'
-        )
+    cx_arm, w_slot, gap_h = 214, 40, 14
+    cy_elmo, cy_meio, cy_bota = 500, 556, 612
+    ferramenta = {slot: (nome, cor) for slot, nome, cor in ARMADURAS}
+    out.append(f'<g opacity="0.16">{icone_classe_fundo(cx_arm, cy_meio, v["GOLD"], v["GOLD"])}</g>')
+    out.append(svg_slot(cx_arm, cy_elmo, w_slot, *ferramenta["elmo"], v))
+    out.append(svg_slot(cx_arm - w_slot - gap_h, cy_meio, w_slot, *ferramenta["arma_esq"], v))
+    out.append(svg_slot(cx_arm, cy_meio, w_slot, *ferramenta["armadura"], v))
+    out.append(svg_slot(cx_arm + w_slot + gap_h, cy_meio, w_slot, *ferramenta["arma_dir"], v))
+    out.append(svg_slot(cx_arm, cy_bota, w_slot, *ferramenta["bota"], v))
 
     if not d["lings"]:
         out.append(f'<text x="{x_hab}" y="{EQUIP_ROWS_Y0}" font-size="11.5" '
@@ -576,7 +605,9 @@ def montar_svg(d):
         mana_atual / mana_max if mana_max else 0,
         vigor_atual / vigor_max if vigor_max else 0,
     )
-    titulo_classe, complemento_classe, icone_classe = CLASSE_TITULOS[classe_chave]
+    titulo_classe, complemento_classe, arquivo_classe = CLASSE_TITULOS[classe_chave]
+    icone_classe = img_icone(arquivo_classe, 64)
+    icone_classe_fundo = img_icone(arquivo_classe, 170)
 
     v = {
         "INK": ink, "STONE": stone, "LIT": lit, "DARK": dark,
@@ -602,7 +633,7 @@ def montar_svg(d):
         v[f"PIP_{letra}"] = pips(col, y, gold)
         v[f"N_{letra}"], v[f"V_{letra}"], v[f"D_{letra}"] = escapar(nome), str(valor), escapar(porque)
 
-    v["BLOCO_EQUIP"] = svg_equipamento(d, v)
+    v["BLOCO_EQUIP"] = svg_equipamento(d, v, icone_classe_fundo)
     v["BLOCO_PERGAMINHO"] = svg_pergaminho(v)
     v["BLOCO_FEITOS"] = svg_conquistas(d, v)
     v["BLOCO_MISSOES"] = svg_missoes(d, v)
