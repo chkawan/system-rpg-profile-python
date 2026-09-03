@@ -463,8 +463,10 @@ def svg_icone_missao(x, y, concluida):
 
 
 def svg_missoes(d, v):
+    # concluidas primeiro, depois em andamento; alfabetico dentro de cada grupo
+    missoes = sorted(d["missoes"], key=lambda r: (not r["tem_url"], nome_missao(r["nome"]).lower()))
     out = []
-    for i, r in enumerate(d["missoes"]):
+    for i, r in enumerate(missoes):
         y = MISSOES_Y0 + i * MISSOES_ROW_H
         concluida = r["tem_url"]
         # linha concluida usa uma cor so em todas as colunas (dourado);
@@ -480,8 +482,11 @@ def svg_missoes(d, v):
         out.append(f'<rect x="230" y="{y - 9}" width="10" height="10" fill="{cor_arma}"/>')
         out.append(f'<text x="246" y="{y}" font-size="9.5" fill="{cor_fraca}">{escapar(truncar(ling, 12))}</text>')
         if r["descricao"]:
-            desc = escapar(truncar(r["descricao"], 66))
+            desc = escapar(truncar(r["descricao"], 55))
             out.append(f'<text x="340" y="{y}" font-size="10" font-style="italic" fill="{cor_fraca}">{desc}</text>')
+        status = "CONCLUIDA" if concluida else "EM PROGRESSO"
+        out.append(f'<text x="864" y="{y}" font-size="9.5" font-weight="bold" text-anchor="end" '
+                    f'fill="{cor_fraca}">{status}</text>')
     return "".join(out)
 
 
