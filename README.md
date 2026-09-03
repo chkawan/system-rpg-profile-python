@@ -11,4 +11,4 @@
 [![Portfólio](https://img.shields.io/badge/Portf%C3%B3lio-kawandev.com.br-3572A5?style=flat-square&logo=vercel&logoColor=white "Projetos no ar, cada um em seu subdomínio")](https://www.kawandev.com.br/)
 [![Instagram](https://img.shields.io/badge/Instagram-@kawan.dev-E4405F?style=flat-square&logo=instagram&logoColor=white "Bastidores e conteúdo sobre dados e Excel")](https://instagram.com/kawan.dev)
 
-<sub>Ficha forjada automaticamente em <!-- ficha:carimbo:inicio -->03/09/2026 15:57 UTC<!-- ficha:carimbo:fim --></sub>
+<sub>Ficha forjada automaticamente em <!-- ficha:carimbo:inicio -->03/09/2026 16:08 UTC<!-- ficha:carimbo:fim --></sub>
