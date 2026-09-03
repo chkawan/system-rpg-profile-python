@@ -60,7 +60,7 @@ query($login: String!) {
                  orderBy: {field: PUSHED_AT, direction: DESC}) {
       totalCount
       nodes {
-        name pushedAt isPrivate stargazerCount homepageUrl
+        name pushedAt isPrivate stargazerCount homepageUrl description
         primaryLanguage { name }
       }
     }
@@ -98,6 +98,7 @@ def buscar(login):
         "repos": [{
             "nome": r["name"], "push": r["pushedAt"], "privado": r["isPrivate"],
             "estrelas": r["stargazerCount"], "tem_url": bool(r["homepageUrl"]),
+            "descricao": r["description"],
             "ling": (r["primaryLanguage"] or {}).get("name"),
         } for r in u["repositories"]["nodes"]],
     }
@@ -112,6 +113,42 @@ def dias(iso):
     return (datetime.now(timezone.utc) - d).days
 
 
+# a maioria dos repos usa nome de gerador tipo "tool-password-generator-python"
+# em vez de um nome de projeto de verdade. como nao da pra saber o nome real,
+# a missao vira o slug sem o prefixo de categoria e o sufixo de linguagem/
+# framework, virado titulo - fica "Password Generator" em vez do slug cru.
+PREFIXOS_GENERICOS = {"tool", "tools", "system", "systems", "sistema", "sistemas",
+                       "api", "bot", "app", "projeto", "template"}
+SUFIXOS_TECNICOS = {"python", "py", "php", "javascript", "js", "typescript", "ts",
+                     "django", "node", "html", "css", "shell"}
+CONECTIVOS = {"de", "da", "do", "das", "dos", "e", "em", "com", "para"}
+
+
+def nome_missao(nome_repo):
+    partes = [p for p in re.split(r"[-_.]+", nome_repo) if p]
+    while len(partes) > 1 and partes[0].lower() in PREFIXOS_GENERICOS:
+        partes.pop(0)
+    while len(partes) > 1 and partes[-1].lower() in SUFIXOS_TECNICOS:
+        partes.pop()
+    while len(partes) > 1 and partes[0].lower() in CONECTIVOS:
+        partes.pop(0)
+    if not partes:
+        return nome_repo
+    return " ".join(p.lower() if i > 0 and p.lower() in CONECTIVOS else p.capitalize()
+                     for i, p in enumerate(partes))
+
+
+def selecionar_missoes(repos, login, max_privadas=6, max_publicas=4):
+    """Repos privados viram as missoes principais (projetos pessoais de
+    verdade); publicos completam a lista. Exclui o repo de perfil (README)."""
+    candidatos = [r for r in repos if r["nome"].lower() != login.lower()]
+    privadas = sorted((r for r in candidatos if r["privado"]),
+                       key=lambda r: r["push"], reverse=True)[:max_privadas]
+    publicas = sorted((r for r in candidatos if not r["privado"]),
+                       key=lambda r: r["push"], reverse=True)[:max_publicas]
+    return privadas + publicas
+
+
 def derivar(d):
     repos = d["repos"]
     selados = sum(1 for r in repos if r["privado"])
@@ -120,6 +157,7 @@ def derivar(d):
     total_repos = d.get("repos_total", len(repos))
     anos = dias(d["criado"]) / 365.25
     recentes = sum(1 for r in repos if dias(r["push"]) < 90)
+    missoes = selecionar_missoes(repos, d["login"])
 
     contagem = {}
     for r in repos:
@@ -135,6 +173,7 @@ def derivar(d):
     return {**d, "selados": selados, "estrelas": estrelas,
             "com_url": com_url, "total_repos": total_repos,
             "anos": anos, "recentes": recentes, "lings": lings, "topo": topo,
+            "missoes": missoes,
             "nivel": nivel, "classe": CLASSES.get(topo, FALLBACK_CLASSE)}
 
 
@@ -226,6 +265,7 @@ EQUIP_CARDS_Y, EQUIP_CARD_H = 458, 68
 PERG_TEXT_Y0, PERG_LINE_H = 580, 20
 PERG_TABLE_Y0, PERG_ROW_H = 660, 22
 CONQ_MEDALHA_CY = 816
+MISSOES_Y0, MISSOES_ROW_H = 994, 24
 
 
 def tom(hexcor, sat_mul, luz):
@@ -351,6 +391,38 @@ def svg_conquistas(d, v):
     return "".join(out)
 
 
+def svg_icone_missao(x, y, concluida, cor):
+    if concluida:
+        return f'<text x="{x}" y="{y}" font-size="14" font-weight="bold" fill="{cor}">✓</text>'
+    # pergaminho enrolado: corpo retangular com as duas pontas arredondadas
+    return (
+        f'<rect x="{x}" y="{y - 10}" width="15" height="10" rx="2" fill="{cor}" opacity="0.85"/>'
+        f'<circle cx="{x}" cy="{y - 5}" r="2" fill="{cor}"/>'
+        f'<circle cx="{x + 15}" cy="{y - 5}" r="2" fill="{cor}"/>'
+    )
+
+
+def svg_missoes(d, v):
+    out = []
+    for i, r in enumerate(d["missoes"]):
+        y = MISSOES_Y0 + i * MISSOES_ROW_H
+        concluida = r["tem_url"]
+        cor_status = v["GOLD"] if concluida else v["DIM"]
+        out.append(svg_icone_missao(16, y, concluida, cor_status))
+        nome = truncar(nome_missao(r["nome"]), 24)
+        cor_nome = v["GOLD"] if concluida else v["VELLUM"]
+        out.append(f'<text x="40" y="{y}" font-size="12" font-weight="bold" fill="{cor_nome}">{escapar(nome)}</text>')
+        ling = r["ling"] or "-"
+        cor_arma = CORES.get(ling, "8a7c62")
+        cor_arma = cor_arma if cor_arma.startswith("#") else "#" + cor_arma
+        out.append(f'<rect x="230" y="{y - 9}" width="10" height="10" fill="{cor_arma}"/>')
+        out.append(f'<text x="246" y="{y}" font-size="9.5" fill="{v["DIM"]}">{escapar(truncar(ling, 12))}</text>')
+        if r["descricao"]:
+            desc = escapar(truncar(r["descricao"], 66))
+            out.append(f'<text x="340" y="{y}" font-size="10" font-style="italic" fill="{v["DIM"]}">{desc}</text>')
+    return "".join(out)
+
+
 def svg_pergaminho(v):
     out = []
     linhas = textwrap.wrap(BIO_TEXTO, width=90)
@@ -418,6 +490,7 @@ def montar_svg(d):
     v["BLOCO_EQUIP"] = svg_equipamento(d, v)
     v["BLOCO_PERGAMINHO"] = svg_pergaminho(v)
     v["BLOCO_FEITOS"] = svg_conquistas(d, v)
+    v["BLOCO_MISSOES"] = svg_missoes(d, v)
 
     with open(BASE_SVG, encoding="utf-8") as f:
         svg = f.read()
