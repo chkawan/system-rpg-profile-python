@@ -50,6 +50,12 @@ BIO_TABELA = [
     ("Marca registrada", "Deploy em cloud e domínio próprio por projeto"),
 ]
 
+# texto do "Juramento" - veio da secao homonima que existia solta no README
+JURAMENTO_TEXTO = (
+    "Atuar como desenvolvedor back-end construindo soluções orientadas a dados, "
+    "com foco em performance, escalabilidade e impacto real no negócio."
+)
+
 QUERY = """
 query($login: String!) {
   user(login: $login) {
@@ -196,6 +202,122 @@ def atributos(d):
     ]
 
 
+# ------------------------------------------------------------- iconografia
+# icones vetoriais pequenos (cx,cy = centro, cor = traco/preenchimento,
+# furo = cor usada em recortes tipo buraco de fechadura). Usados tanto nas
+# medalhas de conquista quanto nos cabecalhos de secao.
+
+def icone_martelo(cx, cy, cor, furo):
+    corpo = (f'<rect x="{cx - 2.5}" y="{cy - 4}" width="5" height="18" rx="1" fill="{cor}"/>'
+             f'<rect x="{cx - 9}" y="{cy - 14}" width="18" height="10" rx="2" fill="{cor}"/>')
+    return f'<g transform="rotate(-35 {cx} {cy})">{corpo}</g>'
+
+
+def icone_cadeado(cx, cy, cor, furo):
+    return (
+        f'<path d="M {cx - 6},{cy - 3} v-4 a6,6 0 0 1 12,0 v4" fill="none" stroke="{cor}" stroke-width="3"/>'
+        f'<rect x="{cx - 9}" y="{cy - 3}" width="18" height="15" rx="2" fill="{cor}"/>'
+        f'<circle cx="{cx}" cy="{cy + 4}" r="2.3" fill="{furo}"/>'
+    )
+
+
+def icone_runa(cx, cy, cor, furo):
+    pontos = " ".join(f"{cx + 11 * math.cos(math.radians(a)):.1f},{cy + 11 * math.sin(math.radians(a)):.1f}"
+                       for a in range(0, 360, 60))
+    return (f'<polygon points="{pontos}" fill="none" stroke="{cor}" stroke-width="2.5"/>'
+            f'<circle cx="{cx}" cy="{cy}" r="3" fill="{cor}"/>')
+
+
+def icone_ampulheta(cx, cy, cor, furo):
+    return (
+        f'<polygon points="{cx - 8},{cy - 12} {cx + 8},{cy - 12} {cx},{cy}" fill="{cor}"/>'
+        f'<polygon points="{cx - 8},{cy + 12} {cx + 8},{cy + 12} {cx},{cy}" fill="{cor}"/>'
+        f'<rect x="{cx - 9}" y="{cy - 14}" width="18" height="2.5" fill="{cor}"/>'
+        f'<rect x="{cx - 9}" y="{cy + 11.5}" width="18" height="2.5" fill="{cor}"/>'
+    )
+
+
+def icone_portal(cx, cy, cor, furo):
+    return (
+        f'<circle cx="{cx}" cy="{cy}" r="9" fill="none" stroke="{cor}" stroke-width="2.5"/>'
+        f'<line x1="{cx - 3}" y1="{cy + 5}" x2="{cx + 6}" y2="{cy - 4}" stroke="{cor}" stroke-width="2.5" stroke-linecap="round"/>'
+        f'<polygon points="{cx + 6},{cy - 4} {cx},{cy - 4} {cx + 6},{cy + 2}" fill="{cor}"/>'
+    )
+
+
+def icone_livro(cx, cy, cor, furo):
+    return (
+        f'<path d="M {cx - 10},{cy - 8} h9 a2,2 0 0 1 2,2 v12 h-11 a2,2 0 0 1 -2,-2 v-10 a2,2 0 0 1 2,-2 Z" fill="{cor}"/>'
+        f'<path d="M {cx + 1},{cy - 8} h9 a2,2 0 0 1 2,2 v10 a2,2 0 0 0 -2,-2 h-9 Z" fill="{cor}" opacity="0.75"/>'
+    )
+
+
+def icone_espadas(cx, cy, cor, furo):
+    espada = (f'<rect x="{cx - 1.5}" y="{cy - 11}" width="3" height="16" fill="{cor}"/>'
+              f'<rect x="{cx - 5}" y="{cy + 2}" width="10" height="2.5" fill="{cor}"/>'
+              f'<rect x="{cx - 1.5}" y="{cy + 4.5}" width="3" height="5" fill="{cor}"/>')
+    return f'<g transform="rotate(45 {cx} {cy})">{espada}</g><g transform="rotate(-45 {cx} {cy})">{espada}</g>'
+
+
+def icone_pergaminho_grande(cx, cy, cor, furo):
+    return (
+        f'<rect x="{cx - 11}" y="{cy - 7}" width="22" height="14" rx="3" fill="none" stroke="{cor}" stroke-width="2"/>'
+        f'<circle cx="{cx - 11}" cy="{cy}" r="3" fill="{cor}"/>'
+        f'<circle cx="{cx + 11}" cy="{cy}" r="3" fill="{cor}"/>'
+        f'<line x1="{cx - 5}" y1="{cy - 2}" x2="{cx + 5}" y2="{cy - 2}" stroke="{cor}" stroke-width="1.5"/>'
+        f'<line x1="{cx - 5}" y1="{cy + 2}" x2="{cx + 5}" y2="{cy + 2}" stroke="{cor}" stroke-width="1.5"/>'
+    )
+
+
+def icone_trofeu(cx, cy, cor, furo):
+    return (
+        f'<path d="M {cx - 8},{cy - 10} h16 v6 a8,7 0 0 1 -16,0 Z" fill="{cor}"/>'
+        f'<path d="M {cx - 8},{cy - 8} h-4 a1,1 0 0 0 0,6 h4" fill="none" stroke="{cor}" stroke-width="2"/>'
+        f'<path d="M {cx + 8},{cy - 8} h4 a1,1 0 0 1 0,6 h-4" fill="none" stroke="{cor}" stroke-width="2"/>'
+        f'<rect x="{cx - 1.5}" y="{cy - 2}" width="3" height="7" fill="{cor}"/>'
+        f'<rect x="{cx - 7}" y="{cy + 5}" width="14" height="2.5" fill="{cor}"/>'
+    )
+
+
+def icone_estrela(cx, cy, cor, furo):
+    pts = []
+    for i in range(8):
+        ang = math.radians(i * 45)
+        raio = 11 if i % 2 == 0 else 4.5
+        pts.append(f"{cx + raio * math.sin(ang):.1f},{cy - raio * math.cos(ang):.1f}")
+    return f'<polygon points="{" ".join(pts)}" fill="{cor}"/>'
+
+
+def icone_chama(cx, cy, cor, furo):
+    return (
+        f'<path d="M {cx},{cy - 13} C {cx + 7},{cy - 5} {cx + 6},{cy + 1} {cx},{cy + 1} '
+        f'C {cx - 6},{cy + 1} {cx - 7},{cy - 5} {cx},{cy - 13} Z" fill="{cor}"/>'
+        f'<rect x="{cx - 6}" y="{cy + 2}" width="12" height="8" rx="1" fill="{cor}"/>'
+    )
+
+
+def icone_caneca(cx, cy, cor, furo):
+    return (
+        f'<rect x="{cx - 8}" y="{cy - 9}" width="16" height="3" rx="1" fill="{cor}"/>'
+        f'<rect x="{cx - 7}" y="{cy - 6}" width="14" height="14" rx="2" fill="{cor}"/>'
+        f'<path d="M {cx + 7},{cy - 3} h4 a3,3 0 0 1 0,8 h-4" fill="none" stroke="{cor}" stroke-width="2.5"/>'
+    )
+
+
+def svg_cabecalho(y, titulo, icone, gold, dim):
+    """Padrao de cabecalho de secao: icone - linha - titulo centralizado -
+    linha - icone, espelhado nas duas pontas."""
+    centro, meio_vao = 440, 130
+    return (
+        icone(32, y - 5, gold, gold)
+        + f'<rect x="48" y="{y - 1}" width="{centro - meio_vao - 48}" height="1.5" fill="{dim}"/>'
+        f'<text x="{centro}" y="{y}" font-size="15" font-weight="bold" text-anchor="middle" '
+        f'fill="{gold}">{titulo}</text>'
+        f'<rect x="{centro + meio_vao}" y="{y - 1}" width="{832 - centro - meio_vao}" height="1.5" fill="{dim}"/>'
+        + icone(848, y - 5, gold, gold)
+    )
+
+
 # tiers de ranqueado, do mais baixo ao mais alto - cada um com cor propria
 TIERS = [
     ("Ferro", "#53585c"),
@@ -214,14 +336,14 @@ SEM_TIER = ("Sem tier", "#5a5245")
 # as 5 conquistas que mais pesam pra quem esta avaliando um perfil pra
 # contratacao: consistencia, trabalho protegido/profissional, ferramental,
 # experiencia e projetos realmente publicados. nome, campo em d (ou
-# funcao), descricao curta do que faz upar, simbolo gravado na medalha,
+# funcao), descricao curta do que faz upar, icone gravado na medalha,
 # limiares dos 10 tiers
 CONQUISTAS = [
-    ("Ritmo de Forja", "commits", "commits no ultimo ano", "⚡", [1, 50, 150, 300, 500, 750, 1000, 1500, 2500, 4000]),
-    ("Cofres Selados", "selados", "repositorios privados", "⚿", [1, 2, 4, 7, 12, 20, 35, 55, 80, 120]),
-    ("Magias Dominadas", lambda d: len(d["lings"]), "linguagens diferentes", "⬡", [1, 2, 3, 4, 6, 8, 10, 13, 16, 20]),
-    ("Anos de Jornada", "anos", "anos de conta ativa", "⌛", [0.5, 1, 2, 3, 4, 5, 7, 9, 12, 15]),
-    ("Portais Abertos", "com_url", "repos com link no ar", "↗", [1, 2, 4, 6, 9, 13, 18, 25, 35, 50]),
+    ("Ritmo de Forja", "commits", "commits no ultimo ano", icone_martelo, [1, 50, 150, 300, 500, 750, 1000, 1500, 2500, 4000]),
+    ("Cofres Selados", "selados", "repositorios privados", icone_cadeado, [1, 2, 4, 7, 12, 20, 35, 55, 80, 120]),
+    ("Magias Dominadas", lambda d: len(d["lings"]), "linguagens diferentes", icone_runa, [1, 2, 3, 4, 6, 8, 10, 13, 16, 20]),
+    ("Anos de Jornada", "anos", "anos de conta ativa", icone_ampulheta, [0.5, 1, 2, 3, 4, 5, 7, 9, 12, 15]),
+    ("Portais Abertos", "com_url", "repos com link no ar", icone_portal, [1, 2, 4, 6, 9, 13, 18, 25, 35, 50]),
 ]
 
 
@@ -249,9 +371,9 @@ def progresso(valor, tier_idx, limiares):
 
 def lista_conquistas(d):
     out = []
-    for nome, campo, descricao, simbolo, limiares in CONQUISTAS:
+    for nome, campo, descricao, icone, limiares in CONQUISTAS:
         valor = campo(d) if callable(campo) else d[campo]
-        out.append((nome, descricao, valor, simbolo, tier_de(valor, limiares), limiares))
+        out.append((nome, descricao, valor, icone, tier_de(valor, limiares), limiares))
     return out
 
 # ------------------------------------------------------------------ svg
@@ -267,6 +389,7 @@ PERG_TEXT_Y0, PERG_LINE_H = 580, 20
 PERG_TABLE_Y0, PERG_ROW_H = 660, 22
 CONQ_MEDALHA_CY = 816
 MISSOES_Y0, MISSOES_ROW_H = 994, 24
+JURAMENTO_TEXT_Y0, JURAMENTO_LINE_H = 1272, 22
 
 
 def tom(hexcor, sat_mul, luz):
@@ -350,9 +473,9 @@ def svg_equipamento(d, v):
     return "".join(out)
 
 
-def svg_medalha(cx, cy, simbolo, tier_cor, dark):
+def svg_medalha(cx, cy, icone, tier_cor, dark):
     """Brasao de condecoracao: escudo com aro na cor do tier, face preenchida
-    e simbolo gravado (tom mais escuro do mesmo matiz da face)."""
+    e icone gravado (tom mais escuro do mesmo matiz da face)."""
     escuro = tom(tier_cor, 1.0, 16)
     fora = (f'M {cx - 28},{cy - 32} L {cx + 28},{cy - 32} L {cx + 28},{cy + 6} '
             f'Q {cx + 28},{cy + 30} {cx},{cy + 40} Q {cx - 28},{cy + 30} {cx - 28},{cy + 6} Z')
@@ -361,7 +484,7 @@ def svg_medalha(cx, cy, simbolo, tier_cor, dark):
     return (
         f'<path d="{fora}" fill="{dark}" stroke="{tier_cor}" stroke-width="3"/>'
         f'<path d="{dentro}" fill="{tier_cor}"/>'
-        f'<text x="{cx}" y="{cy + 2}" font-size="26" text-anchor="middle" fill="{escuro}">{simbolo}</text>'
+        + icone(cx, cy - 3, escuro, tier_cor)
     )
 
 
@@ -371,10 +494,10 @@ def svg_conquistas(d, v):
     cy = CONQ_MEDALHA_CY
     barra_w = 110
     out = []
-    for i, (nome, descricao, valor, simbolo, tier_idx, limiares) in enumerate(itens):
+    for i, (nome, descricao, valor, icone, tier_idx, limiares) in enumerate(itens):
         cx = round(16 + slot * (i + 0.5))
         tier_nome, tier_cor = TIERS[tier_idx] if tier_idx >= 0 else SEM_TIER
-        out.append(svg_medalha(cx, cy, simbolo, tier_cor, v["DARK"]))
+        out.append(svg_medalha(cx, cy, icone, tier_cor, v["DARK"]))
         pct, rotulo = progresso(valor, tier_idx, limiares)
         bx = cx - barra_w / 2
         out.append(
@@ -441,6 +564,16 @@ def svg_pergaminho(v):
     return "".join(out)
 
 
+def svg_juramento(v):
+    out = []
+    linhas = textwrap.wrap(JURAMENTO_TEXTO, width=62)
+    for i, linha in enumerate(linhas):
+        y = JURAMENTO_TEXT_Y0 + i * JURAMENTO_LINE_H
+        out.append(f'<text x="440" y="{y}" font-size="14" font-style="italic" '
+                    f'text-anchor="middle" fill="{v["GOLD"]}">{escapar(linha)}</text>')
+    return "".join(out)
+
+
 def montar_svg(d):
     acento = CORES.get(d["topo"], "4f9ad8")
     acento = acento if acento.startswith("#") else "#" + acento
@@ -494,6 +627,19 @@ def montar_svg(d):
     v["BLOCO_PERGAMINHO"] = svg_pergaminho(v)
     v["BLOCO_FEITOS"] = svg_conquistas(d, v)
     v["BLOCO_MISSOES"] = svg_missoes(d, v)
+    v["BLOCO_JURAMENTO"] = svg_juramento(v)
+
+    cabecalhos = [
+        ("HDR_ATRIBUTOS", 256, "ATRIBUTOS", icone_livro),
+        ("HDR_EQUIPAMENTO", 436, "EQUIPAMENTO", icone_espadas),
+        ("HDR_PERGAMINHO", 556, "PERGAMINHO DO AVENTUREIRO", icone_pergaminho_grande),
+        ("HDR_CONQUISTAS", 762, "CONQUISTAS", icone_trofeu),
+        ("HDR_MISSOES", 964, "MISSOES", icone_estrela),
+        ("HDR_JURAMENTO", 1248, "JURAMENTO", icone_chama),
+        ("HDR_TAVERNA", 1356, "TAVERNA", icone_caneca),
+    ]
+    for chave, y, titulo, icone in cabecalhos:
+        v[chave] = svg_cabecalho(y, titulo, icone, gold, DIM)
 
     with open(BASE_SVG, encoding="utf-8") as f:
         svg = f.read()
