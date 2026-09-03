@@ -24,12 +24,9 @@
   <rect x="12" y="12" width="856" height="104" fill="{{LIT}}"/>
   <rect x="16" y="16" width="848" height="96" fill="{{STONE}}"/>
 
-  <!-- moldura do retrato -->
+  <!-- moldura do retrato: o icone da classe e o retrato principal -->
   <rect x="28" y="24" width="80" height="80" fill="{{DARK}}"/>
-  <g>{{SELO}}</g>
-
-  <!-- selo de classe: badge no canto do retrato -->
-  <rect x="82" y="78" width="26" height="26" rx="4" fill="{{DARK}}" stroke="{{GOLD}}" stroke-width="2"/>
+  <rect x="32" y="28" width="72" height="72" fill="none" stroke="{{GOLD}}" stroke-width="2"/>
   {{ICONE_CLASSE}}
 
   <text x="128" y="56" font-size="28" font-weight="bold" fill="{{VELLUM}}">{{NOME}}</text>

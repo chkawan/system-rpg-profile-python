@@ -226,17 +226,17 @@ def img_icone(caminho, tamanho=32):
 # destaca. cada chave: titulo, complemento e icone proprios.
 CLASSE_TITULOS = {
     "guerreiro": ("Guerreiro, o Forjador",
-                  "ergue tudo na base da forca bruta", img_icone("class/guerreiro.png", 22)),
+                  "ergue tudo na base da forca bruta", img_icone("class/guerreiro.png", 64)),
     "arqueiro": ("Arqueiro, o Cacador de Bugs",
-                 "acerta de longe, sem falhar", img_icone("class/arqueiro.png", 22)),
+                 "acerta de longe, sem falhar", img_icone("class/arqueiro.png", 64)),
     "aventureiro": ("Aventureiro, o Sobrevivente",
-                     "sobrevive a qualquer legado", img_icone("class/aventureiro.png", 22)),
+                     "sobrevive a qualquer legado", img_icone("class/aventureiro.png", 64)),
     "mago": ("Mago, o Tecelao",
-             "tece logica onde so havia caos", img_icone("class/mago.png", 22)),
+             "tece logica onde so havia caos", img_icone("class/mago.png", 64)),
     "curandeiro": ("Curandeiro, o Guardiao",
-                   "mantem tudo de pe", img_icone("class/healer.png", 22)),
+                   "mantem tudo de pe", img_icone("class/healer.png", 64)),
     "ladino": ("Ladino, o Explorador",
-               "acha a brecha que ninguem viu", img_icone("class/ladino.png", 22)),
+               "acha a brecha que ninguem viu", img_icone("class/ladino.png", 64)),
 }
 
 
@@ -365,20 +365,6 @@ def tom(hexcor, sat_mul, luz):
     m = li - c / 2
     seg = [(c, x, 0), (x, c, 0), (0, c, x), (0, x, c), (x, 0, c), (c, 0, x)][int(matiz // 60) % 6]
     return "#" + "".join(f"{round((v + m) * 255):02x}" for v in seg)
-
-
-def selo(login, x, y, cell, cor):
-    """Selo pixelado deterministico, espelhado, a partir do hash do login."""
-    import hashlib
-    h = hashlib.sha256(login.encode()).digest()
-    out = []
-    for linha in range(8):
-        for col in range(4):
-            if h[linha * 4 + col] & 1:
-                for cx in (col, 7 - col):
-                    out.append(f'<rect x="{x + cx * cell}" y="{y + linha * cell}" '
-                               f'width="{cell}" height="{cell}" fill="{cor}"/>')
-    return "".join(out)
 
 
 def segmentos(x, y, largura, cor, passo=12):
@@ -565,12 +551,11 @@ def montar_svg(d):
         "GOLD": gold, "VELLUM": VELLUM, "DIM": DIM,
         "NOME": escapar(d["nome"]), "NIVEL": str(d["nivel"]),
         "CLASSE": escapar(truncar(f'{titulo_classe} - {complemento_classe}', 60)),
-        "ICONE_CLASSE": icone_classe(95, 91, gold, gold),
+        "ICONE_CLASSE": icone_classe(68, 64, gold, gold),
         "LINHA": " . ".join(filter(None, [
             escapar(d["local"]), f'jornada iniciada em {d["criado"][:4]}',
             f'{d["total_repos"]} obras',
         ])),
-        "SELO": selo(d["login"], 34, 30, 8, gold),
     }
     for i, (tag, atual, mx, cor) in enumerate(vitais):
         y = 136 + i * 24
