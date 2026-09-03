@@ -304,17 +304,15 @@ def icone_caneca(cx, cy, cor, furo):
     )
 
 
-def svg_cabecalho(y, titulo, icone, gold, dim):
-    """Padrao de cabecalho de secao: icone - linha - titulo centralizado -
-    linha - icone, espelhado nas duas pontas."""
-    centro, meio_vao = 440, 130
+def svg_cabecalho(y, titulo, icone, gold):
+    """Padrao de cabecalho de secao: icone a esquerda, centralizado com o
+    titulo, que abre com a primeira letra maior (a linha divisoria vem
+    logo abaixo, ja fixa no template)."""
+    primeira, resto = titulo[0], titulo[1:]
     return (
-        icone(32, y - 5, gold, gold)
-        + f'<rect x="48" y="{y - 1}" width="{centro - meio_vao - 48}" height="1.5" fill="{dim}"/>'
-        f'<text x="{centro}" y="{y}" font-size="15" font-weight="bold" text-anchor="middle" '
-        f'fill="{gold}">{titulo}</text>'
-        f'<rect x="{centro + meio_vao}" y="{y - 1}" width="{832 - centro - meio_vao}" height="1.5" fill="{dim}"/>'
-        + icone(848, y - 5, gold, gold)
+        icone(32, y - 6, gold, gold)
+        + f'<text x="52" y="{y}" font-weight="bold" fill="{gold}">'
+        f'<tspan font-size="20">{primeira}</tspan><tspan font-size="14">{resto}</tspan></text>'
     )
 
 
@@ -639,7 +637,7 @@ def montar_svg(d):
         ("HDR_TAVERNA", 1356, "TAVERNA", icone_caneca),
     ]
     for chave, y, titulo, icone in cabecalhos:
-        v[chave] = svg_cabecalho(y, titulo, icone, gold, DIM)
+        v[chave] = svg_cabecalho(y, titulo, icone, gold)
 
     with open(BASE_SVG, encoding="utf-8") as f:
         svg = f.read()
