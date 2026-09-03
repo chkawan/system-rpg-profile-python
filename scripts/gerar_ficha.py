@@ -360,18 +360,18 @@ def icone_adaga(cx, cy, cor, furo):
 # atributo (somado ao vital que ele sustenta, onde existir) mais se
 # destaca. cada chave: titulo, complemento e icone proprios.
 CLASSE_TITULOS = {
-    "guerreiro": ("Guerreiro, o Forjador de Sistemas",
-                  "constroi na base da forca bruta e repeticao", icone_espada),
+    "guerreiro": ("Guerreiro, o Forjador",
+                  "ergue tudo na base da forca bruta", icone_espada),
     "arqueiro": ("Arqueiro, o Cacador de Bugs",
-                 "acerta o alvo de longe, sem perder o ritmo", icone_arco),
-    "aventureiro": ("Aventureiro, o Sobrevivente de Legado",
-                     "atravessa qualquer codigo legado sem quebrar", icone_mochila),
-    "mago": ("Mago, o Tecelao de Algoritmos",
-             "tece logica onde outros veem caos", icone_mago),
-    "curandeiro": ("Curandeiro, o Guardiao da Estabilidade",
-                   "mantem o sistema de pe quando tudo falha", icone_cruz),
-    "ladino": ("Ladino, o Explorador de Brechas",
-               "encontra a fresta que ninguem viu", icone_adaga),
+                 "acerta de longe, sem falhar", icone_arco),
+    "aventureiro": ("Aventureiro, o Sobrevivente",
+                     "sobrevive a qualquer legado", icone_mochila),
+    "mago": ("Mago, o Tecelao",
+             "tece logica onde so havia caos", icone_mago),
+    "curandeiro": ("Curandeiro, o Guardiao",
+                   "mantem tudo de pe", icone_cruz),
+    "ladino": ("Ladino, o Explorador",
+               "acha a brecha que ninguem viu", icone_adaga),
 }
 
 
@@ -700,8 +700,8 @@ def montar_svg(d):
         "INK": ink, "STONE": stone, "LIT": lit, "DARK": dark,
         "GOLD": gold, "VELLUM": VELLUM, "DIM": DIM,
         "NOME": escapar(d["nome"]), "NIVEL": str(d["nivel"]),
-        "CLASSE": f'{escapar(titulo_classe)} - {escapar(complemento_classe)}',
-        "ICONE_CLASSE": icone_classe(140, 74, gold, gold),
+        "CLASSE": escapar(truncar(f'{titulo_classe} - {complemento_classe}', 60)),
+        "ICONE_CLASSE": icone_classe(95, 91, gold, gold),
         "LINHA": " . ".join(filter(None, [
             escapar(d["local"]), f'jornada iniciada em {d["criado"][:4]}',
             f'{d["total_repos"]} obras',

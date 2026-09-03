@@ -28,9 +28,12 @@
   <rect x="28" y="24" width="80" height="80" fill="{{DARK}}"/>
   <g>{{SELO}}</g>
 
-  <text x="128" y="56" font-size="28" font-weight="bold" fill="{{VELLUM}}">{{NOME}}</text>
+  <!-- selo de classe: badge no canto do retrato -->
+  <rect x="82" y="78" width="26" height="26" rx="4" fill="{{DARK}}" stroke="{{GOLD}}" stroke-width="2"/>
   {{ICONE_CLASSE}}
-  <text x="154" y="79" font-size="14" fill="{{GOLD}}">{{CLASSE}}</text>
+
+  <text x="128" y="56" font-size="28" font-weight="bold" fill="{{VELLUM}}">{{NOME}}</text>
+  <text x="128" y="79" font-size="14" fill="{{GOLD}}">{{CLASSE}}</text>
   <text x="128" y="99" font-size="11.5" fill="{{DIM}}">{{LINHA}}</text>
 
   <!-- medalhao de nivel -->
