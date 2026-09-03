@@ -207,25 +207,32 @@ def atributos(d):
 # furo = cor usada em recortes tipo buraco de fechadura). Usados tanto nas
 # medalhas de conquista quanto nos cabecalhos de secao.
 
-def icone_martelo(cx, cy, cor, furo):
-    corpo = (f'<rect x="{cx - 2.5}" y="{cy - 4}" width="5" height="18" rx="1" fill="{cor}"/>'
-             f'<rect x="{cx - 9}" y="{cy - 14}" width="18" height="10" rx="2" fill="{cor}"/>')
-    return f'<g transform="rotate(-35 {cx} {cy})">{corpo}</g>'
-
-
-def icone_cadeado(cx, cy, cor, furo):
+def icone_forja(cx, cy, cor, furo):
+    """Bigorna com fagulhas - Ritmo de Forja."""
     return (
-        f'<path d="M {cx - 6},{cy - 3} v-4 a6,6 0 0 1 12,0 v4" fill="none" stroke="{cor}" stroke-width="3"/>'
-        f'<rect x="{cx - 9}" y="{cy - 3}" width="18" height="15" rx="2" fill="{cor}"/>'
-        f'<circle cx="{cx}" cy="{cy + 4}" r="2.3" fill="{furo}"/>'
+        f'<path d="M {cx - 11},{cy + 2} h22 v3.5 h-22 Z" fill="{cor}"/>'
+        f'<path d="M {cx - 4},{cy + 5.5} h8 v6 h-8 Z" fill="{cor}"/>'
+        f'<circle cx="{cx - 7}" cy="{cy - 6}" r="1.6" fill="{cor}"/>'
+        f'<circle cx="{cx + 2}" cy="{cy - 10}" r="1.6" fill="{cor}"/>'
+        f'<circle cx="{cx + 8}" cy="{cy - 4}" r="1.6" fill="{cor}"/>'
     )
 
 
-def icone_runa(cx, cy, cor, furo):
-    pontos = " ".join(f"{cx + 11 * math.cos(math.radians(a)):.1f},{cy + 11 * math.sin(math.radians(a)):.1f}"
-                       for a in range(0, 360, 60))
-    return (f'<polygon points="{pontos}" fill="none" stroke="{cor}" stroke-width="2.5"/>'
-            f'<circle cx="{cx}" cy="{cy}" r="3" fill="{cor}"/>')
+def icone_bau(cx, cy, cor, furo):
+    """Bau do tesouro - Cofres Selados."""
+    return (
+        f'<path d="M {cx - 10},{cy - 2} q0,-8 10,-8 q10,0 10,8 Z" fill="{cor}"/>'
+        f'<rect x="{cx - 10}" y="{cy - 2}" width="20" height="12" rx="1" fill="{cor}"/>'
+        f'<rect x="{cx - 2}" y="{cy - 3}" width="4" height="5" fill="{furo}"/>'
+    )
+
+
+def icone_mago(cx, cy, cor, furo):
+    """Silhueta de mago (chapeu + tunica) - Magias Dominadas."""
+    return (
+        f'<polygon points="{cx},{cy - 14} {cx - 5},{cy - 4} {cx + 5},{cy - 4}" fill="{cor}"/>'
+        f'<polygon points="{cx},{cy - 6} {cx - 9},{cy + 10} {cx + 9},{cy + 10}" fill="{cor}"/>'
+    )
 
 
 def icone_ampulheta(cx, cy, cor, furo):
@@ -245,18 +252,24 @@ def icone_portal(cx, cy, cor, furo):
     )
 
 
-def icone_livro(cx, cy, cor, furo):
+def icone_d20(cx, cy, cor, furo):
+    """Dado de 20 lados (hexagono com facetas) - Atributos."""
+    pontos = [(cx + 11 * math.cos(math.radians(a)), cy + 11 * math.sin(math.radians(a)))
+              for a in range(0, 360, 60)]
+    contorno = " ".join(f"{x:.1f},{y:.1f}" for x, y in pontos)
+    # linhas de faceta em preto translucido, pra aparecer independente da
+    # cor de preenchimento (furo nem sempre contrasta, ex. nos cabecalhos)
+    facetas = "".join(f'<line x1="{cx}" y1="{cy}" x2="{x:.1f}" y2="{y:.1f}" stroke="#000" '
+                       f'stroke-width="1" opacity="0.35"/>' for x, y in pontos[::2])
+    return f'<polygon points="{contorno}" fill="{cor}"/>' + facetas
+
+
+def icone_escudo(cx, cy, cor, furo):
+    """Escudo - Equipamento."""
     return (
-        f'<path d="M {cx - 10},{cy - 8} h9 a2,2 0 0 1 2,2 v12 h-11 a2,2 0 0 1 -2,-2 v-10 a2,2 0 0 1 2,-2 Z" fill="{cor}"/>'
-        f'<path d="M {cx + 1},{cy - 8} h9 a2,2 0 0 1 2,2 v10 a2,2 0 0 0 -2,-2 h-9 Z" fill="{cor}" opacity="0.75"/>'
+        f'<path d="M {cx - 10},{cy - 11} L {cx + 10},{cy - 11} L {cx + 10},{cy + 2} '
+        f'Q {cx + 10},{cy + 11} {cx},{cy + 14} Q {cx - 10},{cy + 11} {cx - 10},{cy + 2} Z" fill="{cor}"/>'
     )
-
-
-def icone_espadas(cx, cy, cor, furo):
-    espada = (f'<rect x="{cx - 1.5}" y="{cy - 11}" width="3" height="16" fill="{cor}"/>'
-              f'<rect x="{cx - 5}" y="{cy + 2}" width="10" height="2.5" fill="{cor}"/>'
-              f'<rect x="{cx - 1.5}" y="{cy + 4.5}" width="3" height="5" fill="{cor}"/>')
-    return f'<g transform="rotate(45 {cx} {cy})">{espada}</g><g transform="rotate(-45 {cx} {cy})">{espada}</g>'
 
 
 def icone_pergaminho_grande(cx, cy, cor, furo):
@@ -337,9 +350,9 @@ SEM_TIER = ("Sem tier", "#5a5245")
 # funcao), descricao curta do que faz upar, icone gravado na medalha,
 # limiares dos 10 tiers
 CONQUISTAS = [
-    ("Ritmo de Forja", "commits", "commits no ultimo ano", icone_martelo, [1, 50, 150, 300, 500, 750, 1000, 1500, 2500, 4000]),
-    ("Cofres Selados", "selados", "repositorios privados", icone_cadeado, [1, 2, 4, 7, 12, 20, 35, 55, 80, 120]),
-    ("Magias Dominadas", lambda d: len(d["lings"]), "linguagens diferentes", icone_runa, [1, 2, 3, 4, 6, 8, 10, 13, 16, 20]),
+    ("Ritmo de Forja", "commits", "commits no ultimo ano", icone_forja, [1, 50, 150, 300, 500, 750, 1000, 1500, 2500, 4000]),
+    ("Cofres Selados", "selados", "repositorios privados", icone_bau, [1, 2, 4, 7, 12, 20, 35, 55, 80, 120]),
+    ("Magias Dominadas", lambda d: len(d["lings"]), "linguagens diferentes", icone_mago, [1, 2, 3, 4, 6, 8, 10, 13, 16, 20]),
     ("Anos de Jornada", "anos", "anos de conta ativa", icone_ampulheta, [0.5, 1, 2, 3, 4, 5, 7, 9, 12, 15]),
     ("Portais Abertos", "com_url", "repos com link no ar", icone_portal, [1, 2, 4, 6, 9, 13, 18, 25, 35, 50]),
 ]
@@ -628,8 +641,8 @@ def montar_svg(d):
     v["BLOCO_JURAMENTO"] = svg_juramento(v)
 
     cabecalhos = [
-        ("HDR_ATRIBUTOS", 256, "ATRIBUTOS", icone_livro),
-        ("HDR_EQUIPAMENTO", 436, "EQUIPAMENTO", icone_espadas),
+        ("HDR_ATRIBUTOS", 256, "ATRIBUTOS", icone_d20),
+        ("HDR_EQUIPAMENTO", 436, "EQUIPAMENTO", icone_escudo),
         ("HDR_PERGAMINHO", 556, "PERGAMINHO DO AVENTUREIRO", icone_pergaminho_grande),
         ("HDR_CONQUISTAS", 762, "CONQUISTAS", icone_trofeu),
         ("HDR_MISSOES", 964, "MISSOES", icone_estrela),
