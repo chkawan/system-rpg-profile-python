@@ -27,7 +27,13 @@ CORES = {
     "TypeScript": "3178c6", "HTML": "e34c26", "CSS": "563d7c", "Shell": "89e051",
 }
 
-SLOTS = ["Arma principal", "Arma secundaria", "Armadura", "Reliquia"]
+# armaduras: ferramentas/plataformas do dia a dia - curado a mao porque a
+# API do GitHub nao da esse nivel de detalhe (framework, nuvem, BI...),
+# diferente de habilidades (linguagem), que vem direto dos repos
+ARMADURAS = [
+    ("Django", "092E20"), ("PostgreSQL", "336791"), ("MySQL", "4479A1"),
+    ("AWS", "232F3E"), ("Git", "F05032"), ("Power BI", "F2C811"), ("APIs REST", "005571"),
+]
 
 # conteudo estatico do "Pergaminho do aventureiro" e do "Grimorio" - nao vem
 # da API do GitHub, e o texto de bio/skills que edita direto aqui.
@@ -336,12 +342,13 @@ VELLUM, DIM = "#e6d3a3", "#8a7c62"
 # mais conforme a linguagem principal
 ACENTO = "#986dff"
 
-EQUIP_CARDS_Y, EQUIP_CARD_H = 458, 68
-PERG_TEXT_Y0, PERG_LINE_H = 580, 20
-PERG_TABLE_Y0, PERG_ROW_H = 660, 22
-CONQ_MEDALHA_CY = 816
-MISSOES_Y0, MISSOES_ROW_H = 994, 24
-JURAMENTO_TEXT_Y0, JURAMENTO_LINE_H = 1272, 22
+EQUIP_LABEL_Y = 460
+EQUIP_ROWS_Y0, EQUIP_ROW_H = 480, 26
+PERG_TEXT_Y0, PERG_LINE_H = 705, 20
+PERG_TABLE_Y0, PERG_ROW_H = 785, 22
+CONQ_MEDALHA_CY = 941
+MISSOES_Y0, MISSOES_ROW_H = 1119, 24
+JURAMENTO_TEXT_Y0, JURAMENTO_LINE_H = 1395, 22
 
 
 def tom(hexcor, sat_mul, luz):
@@ -387,27 +394,47 @@ def escapar(texto):
     return str(texto).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
+ICONE_HABILIDADES = img_icone("secoes/habilidades.png", 14)
+
+
 def svg_equipamento(d, v):
-    largura = (848 - 3 * 16) // 4
-    if not d["lings"]:
-        return (f'<text x="16" y="{EQUIP_CARDS_Y + 30}" font-size="12" '
-                f'fill="{v["DIM"]}">Maos vazias.</text>')
-    raridade = ["Comum", "Incomum", "Raro", "Epico", "Lendario"]
-    out = []
-    for i, l in enumerate(d["lings"][:4]):
-        x = 16 + i * (largura + 16)
-        cor = CORES.get(l["nome"], "8a7c62")
-        cor = cor if cor.startswith("#") else "#" + cor
-        r = raridade[min(4, int(l["fatia"] * 5))]
-        sub = f'{r} · {l["n"]} repos · {round(l["fatia"] * 100)}%'
+    """Duas colunas: Armaduras (ferramentas curadas, sem stat porque nao
+    tem esse dado) e Habilidades (linguagem = skill, nivel = % dos repos -
+    dado real, direto do GitHub)."""
+    x_arm, x_hab = 16, 452
+    largura_col = 396
+    out = [
+        f'<text x="{x_arm}" y="{EQUIP_LABEL_Y}" font-size="11" font-weight="bold" '
+        f'fill="{v["GOLD"]}">ARMADURAS</text>',
+        ICONE_HABILIDADES(x_hab + 7, EQUIP_LABEL_Y - 4, v["GOLD"], v["GOLD"]),
+        f'<text x="{x_hab + 18}" y="{EQUIP_LABEL_Y}" font-size="11" font-weight="bold" '
+        f'fill="{v["GOLD"]}">HABILIDADES</text>',
+    ]
+
+    for i, (nome, cor) in enumerate(ARMADURAS):
+        y = EQUIP_ROWS_Y0 + i * EQUIP_ROW_H
         out.append(
-            f'<rect x="{x}" y="{EQUIP_CARDS_Y}" width="{largura}" height="{EQUIP_CARD_H}" fill="{v["DARK"]}"/>'
-            f'<rect x="{x + 2}" y="{EQUIP_CARDS_Y + 2}" width="{largura - 4}" height="{EQUIP_CARD_H - 4}" fill="{v["STONE"]}"/>'
-            f'<text x="{x + 10}" y="{EQUIP_CARDS_Y + 16}" font-size="9.5" fill="{v["DIM"]}">{escapar(SLOTS[i]).upper()}</text>'
-            f'<rect x="{x + 10}" y="{EQUIP_CARDS_Y + 24}" width="14" height="14" fill="{cor}"/>'
-            f'<text x="{x + 30}" y="{EQUIP_CARDS_Y + 35}" font-size="12.5" font-weight="bold" fill="{v["VELLUM"]}">{truncar(escapar(l["nome"]), 15)}</text>'
-            f'<text x="{x + 10}" y="{EQUIP_CARDS_Y + 52}" font-size="9.5" fill="{v["DIM"]}">{truncar(sub, 24)}</text>'
+            f'<rect x="{x_arm}" y="{y - 9}" width="10" height="10" fill="#{cor}"/>'
+            f'<text x="{x_arm + 16}" y="{y}" font-size="11.5" fill="{v["VELLUM"]}">{escapar(nome)}</text>'
         )
+
+    if not d["lings"]:
+        out.append(f'<text x="{x_hab}" y="{EQUIP_ROWS_Y0}" font-size="11.5" '
+                    f'fill="{v["DIM"]}">Sem linguagens registradas.</text>')
+    else:
+        barra_w = largura_col - 60
+        for i, l in enumerate(d["lings"][:7]):
+            y = EQUIP_ROWS_Y0 + i * EQUIP_ROW_H
+            cor = CORES.get(l["nome"], "8a7c62")
+            cor = cor if cor.startswith("#") else "#" + cor
+            out.append(
+                f'<rect x="{x_hab}" y="{y - 9}" width="10" height="10" fill="{cor}"/>'
+                f'<text x="{x_hab + 16}" y="{y}" font-size="11.5" fill="{v["VELLUM"]}">{truncar(escapar(l["nome"]), 14)}</text>'
+                f'<text x="{x_hab + largura_col}" y="{y}" font-size="11" font-weight="bold" text-anchor="end" '
+                f'fill="{v["GOLD"]}">{round(l["fatia"] * 100)}%</text>'
+                f'<rect x="{x_hab + 16}" y="{y + 4}" width="{barra_w}" height="3" fill="{v["DARK"]}"/>'
+                f'<rect x="{x_hab + 16}" y="{y + 4}" width="{barra_w * l["fatia"]:.0f}" height="3" fill="{cor}"/>'
+            )
     return "".join(out)
 
 
@@ -584,11 +611,11 @@ def montar_svg(d):
     cabecalhos = [
         ("HDR_ATRIBUTOS", 256, "ATRIBUTOS", img_icone("secoes/atributos.png", 26)),
         ("HDR_EQUIPAMENTO", 436, "EQUIPAMENTO", img_icone("secoes/equipamento.png", 26)),
-        ("HDR_PERGAMINHO", 556, "PERGAMINHO DO AVENTUREIRO", img_icone("secoes/pergaminho.png", 26)),
-        ("HDR_CONQUISTAS", 762, "CONQUISTAS", img_icone("secoes/conquista.png", 26)),
-        ("HDR_MISSOES", 964, "MISSOES", img_icone("secoes/missoes.png", 26)),
-        ("HDR_JURAMENTO", 1248, "JURAMENTO", img_icone("secoes/juramento.png", 26)),
-        ("HDR_TAVERNA", 1356, "TAVERNA", img_icone("secoes/taverna.png", 26)),
+        ("HDR_PERGAMINHO", 681, "PERGAMINHO DO AVENTUREIRO", img_icone("secoes/pergaminho.png", 26)),
+        ("HDR_CONQUISTAS", 887, "CONQUISTAS", img_icone("secoes/conquista.png", 26)),
+        ("HDR_MISSOES", 1089, "MISSOES", img_icone("secoes/missoes.png", 26)),
+        ("HDR_JURAMENTO", 1371, "JURAMENTO", img_icone("secoes/juramento.png", 26)),
+        ("HDR_TAVERNA", 1475, "TAVERNA", img_icone("secoes/taverna.png", 26)),
     ]
     for chave, y, titulo, icone in cabecalhos:
         v[chave] = svg_cabecalho(y, titulo, icone, gold)
