@@ -92,6 +92,11 @@ def buscar(login):
     dados = r.json()
     if dados.get("errors"):
         raise SystemExit("GitHub recusou: " + dados["errors"][0]["message"])
+    if "data" not in dados:
+        raise SystemExit(
+            f"Resposta inesperada da API (HTTP {r.status_code}): "
+            + dados.get("message", str(dados))
+        )
     u = dados["data"]["user"]
     return {
         "nome": u["name"] or u["login"],
