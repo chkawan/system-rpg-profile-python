@@ -9,6 +9,7 @@ pergaminho e conquistas) e troca o carimbo de data entre os marcadores
     python scripts/gerar_ficha.py            # busca no GitHub (usa GH_TOKEN)
     python scripts/gerar_ficha.py --previa   # roda com dados de exemplo
 """
+import base64
 import math
 import os
 import re
@@ -19,6 +20,7 @@ from datetime import datetime, timezone
 LOGIN = os.environ.get("FICHA_LOGIN", "chkawan")
 TOKEN = os.environ.get("GH_TOKEN", "")
 README = os.path.join(os.path.dirname(__file__), "..", "README.md")
+ICONES_DIR = os.path.join(os.path.dirname(__file__), "..", "ficha", "icones")
 
 CORES = {
     "Python": "3572A5", "PHP": "4F5D95", "JavaScript": "f1e05a",
@@ -197,79 +199,22 @@ def atributos(d):
 # furo = cor usada em recortes tipo buraco de fechadura). Usados tanto nas
 # medalhas de conquista quanto nos cabecalhos de secao.
 
-def icone_forja(cx, cy, cor, furo):
-    """Bigorna com fagulhas - Ritmo de Forja."""
-    return (
-        f'<path d="M {cx - 11},{cy + 2} h22 v3.5 h-22 Z" fill="{cor}"/>'
-        f'<path d="M {cx - 4},{cy + 5.5} h8 v6 h-8 Z" fill="{cor}"/>'
-        f'<circle cx="{cx - 7}" cy="{cy - 6}" r="1.6" fill="{cor}"/>'
-        f'<circle cx="{cx + 2}" cy="{cy - 10}" r="1.6" fill="{cor}"/>'
-        f'<circle cx="{cx + 8}" cy="{cy - 4}" r="1.6" fill="{cor}"/>'
-    )
+_CACHE_IMG = {}
 
 
-def icone_bau(cx, cy, cor, furo):
-    """Bau do tesouro - Cofres Selados."""
-    return (
-        f'<path d="M {cx - 10},{cy - 2} q0,-8 10,-8 q10,0 10,8 Z" fill="{cor}"/>'
-        f'<rect x="{cx - 10}" y="{cy - 2}" width="20" height="12" rx="1" fill="{cor}"/>'
-        f'<rect x="{cx - 2}" y="{cy - 3}" width="4" height="5" fill="{furo}"/>'
-    )
+def img_icone(caminho, tamanho=32):
+    """Fabrica: le um PNG (relativo a ICONES_DIR) e devolve uma funcao
+    icone(cx,cy,cor,furo) que embute a imagem centralizada em (cx,cy) via
+    base64. cor/furo sao ignorados - a imagem ja vem com cor propria."""
+    if caminho not in _CACHE_IMG:
+        with open(os.path.join(ICONES_DIR, caminho), "rb") as f:
+            _CACHE_IMG[caminho] = base64.b64encode(f.read()).decode("ascii")
+    b64 = _CACHE_IMG[caminho]
 
-
-def icone_mago(cx, cy, cor, furo):
-    """Silhueta de mago (chapeu + tunica) - Magias Dominadas."""
-    return (
-        f'<polygon points="{cx},{cy - 14} {cx - 5},{cy - 4} {cx + 5},{cy - 4}" fill="{cor}"/>'
-        f'<polygon points="{cx},{cy - 6} {cx - 9},{cy + 10} {cx + 9},{cy + 10}" fill="{cor}"/>'
-    )
-
-
-def icone_ampulheta(cx, cy, cor, furo):
-    return (
-        f'<polygon points="{cx - 8},{cy - 12} {cx + 8},{cy - 12} {cx},{cy}" fill="{cor}"/>'
-        f'<polygon points="{cx - 8},{cy + 12} {cx + 8},{cy + 12} {cx},{cy}" fill="{cor}"/>'
-        f'<rect x="{cx - 9}" y="{cy - 14}" width="18" height="2.5" fill="{cor}"/>'
-        f'<rect x="{cx - 9}" y="{cy + 11.5}" width="18" height="2.5" fill="{cor}"/>'
-    )
-
-
-def icone_portal(cx, cy, cor, furo):
-    return (
-        f'<circle cx="{cx}" cy="{cy}" r="9" fill="none" stroke="{cor}" stroke-width="2.5"/>'
-        f'<line x1="{cx - 3}" y1="{cy + 5}" x2="{cx + 6}" y2="{cy - 4}" stroke="{cor}" stroke-width="2.5" stroke-linecap="round"/>'
-        f'<polygon points="{cx + 6},{cy - 4} {cx},{cy - 4} {cx + 6},{cy + 2}" fill="{cor}"/>'
-    )
-
-
-def icone_d20(cx, cy, cor, furo):
-    """Dado de 20 lados (hexagono com facetas) - Atributos."""
-    pontos = [(cx + 11 * math.cos(math.radians(a)), cy + 11 * math.sin(math.radians(a)))
-              for a in range(0, 360, 60)]
-    contorno = " ".join(f"{x:.1f},{y:.1f}" for x, y in pontos)
-    # linhas de faceta em preto translucido, pra aparecer independente da
-    # cor de preenchimento (furo nem sempre contrasta, ex. nos cabecalhos)
-    facetas = "".join(f'<line x1="{cx}" y1="{cy}" x2="{x:.1f}" y2="{y:.1f}" stroke="#000" '
-                       f'stroke-width="1" opacity="0.35"/>' for x, y in pontos[::2])
-    return f'<polygon points="{contorno}" fill="{cor}"/>' + facetas
-
-
-def icone_escudo(cx, cy, cor, furo):
-    """Escudo - Equipamento."""
-    return (
-        f'<path d="M {cx - 10},{cy - 11} L {cx + 10},{cy - 11} L {cx + 10},{cy + 2} '
-        f'Q {cx + 10},{cy + 11} {cx},{cy + 14} Q {cx - 10},{cy + 11} {cx - 10},{cy + 2} Z" fill="{cor}"/>'
-    )
-
-
-def icone_pergaminho_grande(cx, cy, cor, furo):
-    return (
-        f'<rect x="{cx - 11}" y="{cy - 7}" width="22" height="14" rx="3" fill="none" stroke="{cor}" stroke-width="2"/>'
-        f'<circle cx="{cx - 11}" cy="{cy}" r="3" fill="{cor}"/>'
-        f'<circle cx="{cx + 11}" cy="{cy}" r="3" fill="{cor}"/>'
-        f'<line x1="{cx - 5}" y1="{cy - 2}" x2="{cx + 5}" y2="{cy - 2}" stroke="{cor}" stroke-width="1.5"/>'
-        f'<line x1="{cx - 5}" y1="{cy + 2}" x2="{cx + 5}" y2="{cy + 2}" stroke="{cor}" stroke-width="1.5"/>'
-    )
+    def render(cx, cy, cor, furo):
+        return (f'<image x="{cx - tamanho / 2:.1f}" y="{cy - tamanho / 2:.1f}" '
+                f'width="{tamanho}" height="{tamanho}" href="data:image/png;base64,{b64}"/>')
+    return render
 
 
 def icone_trofeu(cx, cy, cor, furo):
@@ -282,77 +227,6 @@ def icone_trofeu(cx, cy, cor, furo):
     )
 
 
-def icone_estrela(cx, cy, cor, furo):
-    pts = []
-    for i in range(8):
-        ang = math.radians(i * 45)
-        raio = 11 if i % 2 == 0 else 4.5
-        pts.append(f"{cx + raio * math.sin(ang):.1f},{cy - raio * math.cos(ang):.1f}")
-    return f'<polygon points="{" ".join(pts)}" fill="{cor}"/>'
-
-
-def icone_chama(cx, cy, cor, furo):
-    return (
-        f'<path d="M {cx},{cy - 13} C {cx + 7},{cy - 5} {cx + 6},{cy + 1} {cx},{cy + 1} '
-        f'C {cx - 6},{cy + 1} {cx - 7},{cy - 5} {cx},{cy - 13} Z" fill="{cor}"/>'
-        f'<rect x="{cx - 6}" y="{cy + 2}" width="12" height="8" rx="1" fill="{cor}"/>'
-    )
-
-
-def icone_caneca(cx, cy, cor, furo):
-    return (
-        f'<rect x="{cx - 8}" y="{cy - 9}" width="16" height="3" rx="1" fill="{cor}"/>'
-        f'<rect x="{cx - 7}" y="{cy - 6}" width="14" height="14" rx="2" fill="{cor}"/>'
-        f'<path d="M {cx + 7},{cy - 3} h4 a3,3 0 0 1 0,8 h-4" fill="none" stroke="{cor}" stroke-width="2.5"/>'
-    )
-
-
-# icones de classe - usados no medalhao da ficha ao lado do titulo da classe
-
-def icone_espada(cx, cy, cor, furo):
-    """Espada unica - Guerreiro."""
-    return (
-        f'<rect x="{cx - 1.5}" y="{cy - 11}" width="3" height="16" fill="{cor}"/>'
-        f'<rect x="{cx - 5}" y="{cy + 2}" width="10" height="2.5" fill="{cor}"/>'
-        f'<rect x="{cx - 1.5}" y="{cy + 4.5}" width="3" height="6" fill="{cor}"/>'
-    )
-
-
-def icone_arco(cx, cy, cor, furo):
-    """Arco retesado com flecha - Arqueiro."""
-    return (
-        f'<path d="M {cx - 8},{cy - 12} Q {cx + 4},{cy} {cx - 8},{cy + 12}" '
-        f'fill="none" stroke="{cor}" stroke-width="2.2"/>'
-        f'<line x1="{cx - 8}" y1="{cy - 12}" x2="{cx - 8}" y2="{cy + 12}" stroke="{cor}" stroke-width="1.3"/>'
-        f'<line x1="{cx - 9}" y1="{cy}" x2="{cx + 9}" y2="{cy}" stroke="{cor}" stroke-width="2"/>'
-        f'<polygon points="{cx + 9},{cy} {cx + 4},{cy - 3} {cx + 4},{cy + 3}" fill="{cor}"/>'
-    )
-
-
-def icone_mochila(cx, cy, cor, furo):
-    """Mochila de viagem - Aventureiro."""
-    return (
-        f'<rect x="{cx - 7}" y="{cy - 6}" width="14" height="16" rx="3" fill="{cor}"/>'
-        f'<rect x="{cx - 4}" y="{cy - 11}" width="8" height="6" rx="2" fill="{cor}"/>'
-        f'<rect x="{cx - 5}" y="{cy - 1}" width="10" height="3" fill="{furo}"/>'
-    )
-
-
-def icone_cruz(cx, cy, cor, furo):
-    """Cruz de cura - Curandeiro."""
-    return (
-        f'<rect x="{cx - 3}" y="{cy - 10}" width="6" height="20" rx="1.5" fill="{cor}"/>'
-        f'<rect x="{cx - 10}" y="{cy - 3}" width="20" height="6" rx="1.5" fill="{cor}"/>'
-    )
-
-
-def icone_adaga(cx, cy, cor, furo):
-    """Adaga - Ladino."""
-    return (
-        f'<polygon points="{cx},{cy - 12} {cx + 3},{cy + 2} {cx - 3},{cy + 2}" fill="{cor}"/>'
-        f'<rect x="{cx - 5}" y="{cy + 2}" width="10" height="2.5" fill="{cor}"/>'
-        f'<rect x="{cx - 1.5}" y="{cy + 4.5}" width="3" height="6" fill="{cor}"/>'
-    )
 
 
 # classe agora nao vem mais da linguagem principal (por isso o guerreiro
@@ -361,17 +235,17 @@ def icone_adaga(cx, cy, cor, furo):
 # destaca. cada chave: titulo, complemento e icone proprios.
 CLASSE_TITULOS = {
     "guerreiro": ("Guerreiro, o Forjador",
-                  "ergue tudo na base da forca bruta", icone_espada),
+                  "ergue tudo na base da forca bruta", img_icone("class/guerreiro.png", 22)),
     "arqueiro": ("Arqueiro, o Cacador de Bugs",
-                 "acerta de longe, sem falhar", icone_arco),
+                 "acerta de longe, sem falhar", img_icone("class/arqueiro.png", 22)),
     "aventureiro": ("Aventureiro, o Sobrevivente",
-                     "sobrevive a qualquer legado", icone_mochila),
+                     "sobrevive a qualquer legado", img_icone("class/aventureiro.png", 22)),
     "mago": ("Mago, o Tecelao",
-             "tece logica onde so havia caos", icone_mago),
+             "tece logica onde so havia caos", img_icone("class/mago.png", 22)),
     "curandeiro": ("Curandeiro, o Guardiao",
-                   "mantem tudo de pe", icone_cruz),
+                   "mantem tudo de pe", img_icone("class/healer.png", 22)),
     "ladino": ("Ladino, o Explorador",
-               "acha a brecha que ninguem viu", icone_adaga),
+               "acha a brecha que ninguem viu", img_icone("class/ladino.png", 22)),
 }
 
 
@@ -423,11 +297,11 @@ SEM_TIER = ("Sem tier", "#5a5245")
 # funcao), descricao curta do que faz upar, icone gravado na medalha,
 # limiares dos 10 tiers
 CONQUISTAS = [
-    ("Ritmo de Forja", "commits", "commits no ultimo ano", icone_forja, [1, 50, 150, 300, 500, 750, 1000, 1500, 2500, 4000]),
-    ("Cofres Selados", "selados", "repositorios privados", icone_bau, [1, 2, 4, 7, 12, 20, 35, 55, 80, 120]),
-    ("Magias Dominadas", lambda d: len(d["lings"]), "linguagens diferentes", icone_mago, [1, 2, 3, 4, 6, 8, 10, 13, 16, 20]),
-    ("Anos de Jornada", "anos", "anos de conta ativa", icone_ampulheta, [0.5, 1, 2, 3, 4, 5, 7, 9, 12, 15]),
-    ("Portais Abertos", "com_url", "repos com link no ar", icone_portal, [1, 2, 4, 6, 9, 13, 18, 25, 35, 50]),
+    ("Ritmo de Forja", "commits", "commits no ultimo ano", img_icone("conquistas/forja.png", 34), [1, 50, 150, 300, 500, 750, 1000, 1500, 2500, 4000]),
+    ("Cofres Selados", "selados", "repositorios privados", img_icone("conquistas/cofre.png", 34), [1, 2, 4, 7, 12, 20, 35, 55, 80, 120]),
+    ("Magias Dominadas", lambda d: len(d["lings"]), "linguagens diferentes", img_icone("conquistas/magias.png", 34), [1, 2, 3, 4, 6, 8, 10, 13, 16, 20]),
+    ("Anos de Jornada", "anos", "anos de conta ativa", img_icone("conquistas/ano.png", 34), [0.5, 1, 2, 3, 4, 5, 7, 9, 12, 15]),
+    ("Portais Abertos", "com_url", "repos com link no ar", img_icone("conquistas/portal.png", 34), [1, 2, 4, 6, 9, 13, 18, 25, 35, 50]),
 ]
 
 
@@ -599,15 +473,13 @@ def svg_conquistas(d, v):
     return "".join(out)
 
 
-def svg_icone_missao(x, y, concluida, cor):
-    if concluida:
-        return f'<text x="{x}" y="{y}" font-size="14" font-weight="bold" fill="{cor}">✓</text>'
-    # pergaminho enrolado: corpo retangular com as duas pontas arredondadas
-    return (
-        f'<rect x="{x}" y="{y - 10}" width="15" height="10" rx="2" fill="{cor}" opacity="0.85"/>'
-        f'<circle cx="{x}" cy="{y - 5}" r="2" fill="{cor}"/>'
-        f'<circle cx="{x + 15}" cy="{y - 5}" r="2" fill="{cor}"/>'
-    )
+ICONE_MISSAO_COMPLETA = img_icone("secoes/missoes_completas.png", 16)
+ICONE_MISSAO_PENDENTE = img_icone("secoes/missoes_pendentes.png", 16)
+
+
+def svg_icone_missao(x, y, concluida):
+    icone = ICONE_MISSAO_COMPLETA if concluida else ICONE_MISSAO_PENDENTE
+    return icone(x + 8, y - 5, None, None)
 
 
 def svg_missoes(d, v):
@@ -619,7 +491,7 @@ def svg_missoes(d, v):
         # em andamento usa a paleta neutra padrao
         cor_forte = v["GOLD"] if concluida else v["VELLUM"]
         cor_fraca = v["GOLD"] if concluida else v["DIM"]
-        out.append(svg_icone_missao(16, y, concluida, cor_fraca))
+        out.append(svg_icone_missao(16, y, concluida))
         nome = truncar(nome_missao(r["nome"]), 24)
         out.append(f'<text x="40" y="{y}" font-size="12" font-weight="bold" fill="{cor_forte}">{escapar(nome)}</text>')
         ling = r["ling"] or "-"
@@ -728,13 +600,13 @@ def montar_svg(d):
     v["BLOCO_JURAMENTO"] = svg_juramento(v)
 
     cabecalhos = [
-        ("HDR_ATRIBUTOS", 256, "ATRIBUTOS", icone_d20),
-        ("HDR_EQUIPAMENTO", 436, "EQUIPAMENTO", icone_escudo),
-        ("HDR_PERGAMINHO", 556, "PERGAMINHO DO AVENTUREIRO", icone_pergaminho_grande),
+        ("HDR_ATRIBUTOS", 256, "ATRIBUTOS", img_icone("secoes/atributos.png", 26)),
+        ("HDR_EQUIPAMENTO", 436, "EQUIPAMENTO", img_icone("secoes/equipamento.png", 26)),
+        ("HDR_PERGAMINHO", 556, "PERGAMINHO DO AVENTUREIRO", img_icone("secoes/pergaminho.png", 26)),
         ("HDR_CONQUISTAS", 762, "CONQUISTAS", icone_trofeu),
-        ("HDR_MISSOES", 964, "MISSOES", icone_estrela),
-        ("HDR_JURAMENTO", 1248, "JURAMENTO", icone_chama),
-        ("HDR_TAVERNA", 1356, "TAVERNA", icone_caneca),
+        ("HDR_MISSOES", 964, "MISSOES", img_icone("secoes/missoes.png", 26)),
+        ("HDR_JURAMENTO", 1248, "JURAMENTO", img_icone("secoes/juramento.png", 26)),
+        ("HDR_TAVERNA", 1356, "TAVERNA", img_icone("secoes/taverna.png", 26)),
     ]
     for chave, y, titulo, icone in cabecalhos:
         v[chave] = svg_cabecalho(y, titulo, icone, gold)
