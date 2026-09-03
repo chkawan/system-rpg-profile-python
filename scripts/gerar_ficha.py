@@ -20,15 +20,6 @@ LOGIN = os.environ.get("FICHA_LOGIN", "chkawan")
 TOKEN = os.environ.get("GH_TOKEN", "")
 README = os.path.join(os.path.dirname(__file__), "..", "README.md")
 
-CLASSES = {
-    "Python": ("Encantador de serpentes", "fala baixo e o sistema obedece"),
-    "PHP": ("Necromante", "ergue sistemas que deviam ter morrido"),
-    "JavaScript": ("Alquimista errante", "transmuta o que ninguem pediu"),
-    "TypeScript": ("Escriba dos Tipos", "anota tudo antes que quebre"),
-    "HTML": ("Pedreiro", "levanta a estrutura que os outros pintam"),
-}
-FALLBACK_CLASSE = ("Andarilho", "aprende no caminho")
-
 CORES = {
     "Python": "3572A5", "PHP": "4F5D95", "JavaScript": "f1e05a",
     "TypeScript": "3178c6", "HTML": "e34c26", "CSS": "563d7c", "Shell": "89e051",
@@ -180,8 +171,7 @@ def derivar(d):
     return {**d, "selados": selados, "estrelas": estrelas,
             "com_url": com_url, "total_repos": total_repos,
             "anos": anos, "recentes": recentes, "lings": lings, "topo": topo,
-            "missoes": missoes,
-            "nivel": nivel, "classe": CLASSES.get(topo, FALLBACK_CLASSE)}
+            "missoes": missoes, "nivel": nivel}
 
 
 def atributos(d):
@@ -315,6 +305,89 @@ def icone_caneca(cx, cy, cor, furo):
         f'<rect x="{cx - 7}" y="{cy - 6}" width="14" height="14" rx="2" fill="{cor}"/>'
         f'<path d="M {cx + 7},{cy - 3} h4 a3,3 0 0 1 0,8 h-4" fill="none" stroke="{cor}" stroke-width="2.5"/>'
     )
+
+
+# icones de classe - usados no medalhao da ficha ao lado do titulo da classe
+
+def icone_espada(cx, cy, cor, furo):
+    """Espada unica - Guerreiro."""
+    return (
+        f'<rect x="{cx - 1.5}" y="{cy - 11}" width="3" height="16" fill="{cor}"/>'
+        f'<rect x="{cx - 5}" y="{cy + 2}" width="10" height="2.5" fill="{cor}"/>'
+        f'<rect x="{cx - 1.5}" y="{cy + 4.5}" width="3" height="6" fill="{cor}"/>'
+    )
+
+
+def icone_arco(cx, cy, cor, furo):
+    """Arco retesado com flecha - Arqueiro."""
+    return (
+        f'<path d="M {cx - 8},{cy - 12} Q {cx + 4},{cy} {cx - 8},{cy + 12}" '
+        f'fill="none" stroke="{cor}" stroke-width="2.2"/>'
+        f'<line x1="{cx - 8}" y1="{cy - 12}" x2="{cx - 8}" y2="{cy + 12}" stroke="{cor}" stroke-width="1.3"/>'
+        f'<line x1="{cx - 9}" y1="{cy}" x2="{cx + 9}" y2="{cy}" stroke="{cor}" stroke-width="2"/>'
+        f'<polygon points="{cx + 9},{cy} {cx + 4},{cy - 3} {cx + 4},{cy + 3}" fill="{cor}"/>'
+    )
+
+
+def icone_mochila(cx, cy, cor, furo):
+    """Mochila de viagem - Aventureiro."""
+    return (
+        f'<rect x="{cx - 7}" y="{cy - 6}" width="14" height="16" rx="3" fill="{cor}"/>'
+        f'<rect x="{cx - 4}" y="{cy - 11}" width="8" height="6" rx="2" fill="{cor}"/>'
+        f'<rect x="{cx - 5}" y="{cy - 1}" width="10" height="3" fill="{furo}"/>'
+    )
+
+
+def icone_cruz(cx, cy, cor, furo):
+    """Cruz de cura - Curandeiro."""
+    return (
+        f'<rect x="{cx - 3}" y="{cy - 10}" width="6" height="20" rx="1.5" fill="{cor}"/>'
+        f'<rect x="{cx - 10}" y="{cy - 3}" width="20" height="6" rx="1.5" fill="{cor}"/>'
+    )
+
+
+def icone_adaga(cx, cy, cor, furo):
+    """Adaga - Ladino."""
+    return (
+        f'<polygon points="{cx},{cy - 12} {cx + 3},{cy + 2} {cx - 3},{cy + 2}" fill="{cor}"/>'
+        f'<rect x="{cx - 5}" y="{cy + 2}" width="10" height="2.5" fill="{cor}"/>'
+        f'<rect x="{cx - 1.5}" y="{cy + 4.5}" width="3" height="6" fill="{cor}"/>'
+    )
+
+
+# classe agora nao vem mais da linguagem principal (por isso o guerreiro
+# nao carrega mais titulo de "encantador de serpentes"): vem de qual
+# atributo (somado ao vital que ele sustenta, onde existir) mais se
+# destaca. cada chave: titulo, complemento e icone proprios.
+CLASSE_TITULOS = {
+    "guerreiro": ("Guerreiro, o Forjador de Sistemas",
+                  "constroi na base da forca bruta e repeticao", icone_espada),
+    "arqueiro": ("Arqueiro, o Cacador de Bugs",
+                 "acerta o alvo de longe, sem perder o ritmo", icone_arco),
+    "aventureiro": ("Aventureiro, o Sobrevivente de Legado",
+                     "atravessa qualquer codigo legado sem quebrar", icone_mochila),
+    "mago": ("Mago, o Tecelao de Algoritmos",
+             "tece logica onde outros veem caos", icone_mago),
+    "curandeiro": ("Curandeiro, o Guardiao da Estabilidade",
+                   "mantem o sistema de pe quando tudo falha", icone_cruz),
+    "ladino": ("Ladino, o Explorador de Brechas",
+               "encontra a fresta que ninguem viu", icone_adaga),
+}
+
+
+def determinar_classe(pontos, vida_pct, mana_pct, vigor_pct):
+    """Forca+Vigor -> Guerreiro, Destreza -> Arqueiro, Constituicao+Vida ->
+    Aventureiro, Inteligencia+Mana -> Mago, Sabedoria -> Curandeiro,
+    Carisma -> Ladino. O vital só entra pra quem tem um vital associado."""
+    candidatos = {
+        "guerreiro": pontos["Forca"] + vigor_pct * 5,
+        "arqueiro": pontos["Destreza"],
+        "aventureiro": pontos["Constituicao"] + vida_pct * 5,
+        "mago": pontos["Inteligencia"] + mana_pct * 5,
+        "curandeiro": pontos["Sabedoria"],
+        "ladino": pontos["Carisma"],
+    }
+    return max(candidatos, key=candidatos.get)
 
 
 def svg_cabecalho(y, titulo, icone, gold):
@@ -603,18 +676,32 @@ def montar_svg(d):
     vida_max = pontos["Constituicao"] * 25
     mana_max = pontos["Inteligencia"] * 25
     vigor_max = pontos["Forca"] * 25
+    vida_atual = min(vida_max, 40 + d["recentes"] * 15)
+    mana_atual = min(mana_max, 30 + d["estrelas"] * 3)
+    vigor_atual = min(vigor_max, d["commits"])
     vitais = [
-        ("VIDA", min(vida_max, 40 + d["recentes"] * 15), vida_max, PAL_HP),
-        ("MANA", min(mana_max, 30 + d["estrelas"] * 3), mana_max, PAL_MP),
-        ("VIGOR", min(vigor_max, d["commits"]), vigor_max, PAL_ST),
+        ("VIDA", vida_atual, vida_max, PAL_HP),
+        ("MANA", mana_atual, mana_max, PAL_MP),
+        ("VIGOR", vigor_atual, vigor_max, PAL_ST),
         ("EXP", d["nivel"] % 10 * 100 + 40, 1000, gold),
     ]
+
+    # classe vem do atributo (+ vital que ele sustenta) que mais se destaca,
+    # nao da linguagem principal
+    classe_chave = determinar_classe(
+        pontos,
+        vida_atual / vida_max if vida_max else 0,
+        mana_atual / mana_max if mana_max else 0,
+        vigor_atual / vigor_max if vigor_max else 0,
+    )
+    titulo_classe, complemento_classe, icone_classe = CLASSE_TITULOS[classe_chave]
 
     v = {
         "INK": ink, "STONE": stone, "LIT": lit, "DARK": dark,
         "GOLD": gold, "VELLUM": VELLUM, "DIM": DIM,
         "NOME": escapar(d["nome"]), "NIVEL": str(d["nivel"]),
-        "CLASSE": f'{escapar(d["classe"][0])} - {escapar(d["classe"][1])}',
+        "CLASSE": f'{escapar(titulo_classe)} - {escapar(complemento_classe)}',
+        "ICONE_CLASSE": icone_classe(140, 74, gold, gold),
         "LINHA": " . ".join(filter(None, [
             escapar(d["local"]), f'jornada iniciada em {d["criado"][:4]}',
             f'{d["total_repos"]} obras',

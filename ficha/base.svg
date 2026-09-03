@@ -29,7 +29,8 @@
   <g>{{SELO}}</g>
 
   <text x="128" y="56" font-size="28" font-weight="bold" fill="{{VELLUM}}">{{NOME}}</text>
-  <text x="128" y="79" font-size="14" fill="{{GOLD}}">{{CLASSE}}</text>
+  {{ICONE_CLASSE}}
+  <text x="154" y="79" font-size="14" fill="{{GOLD}}">{{CLASSE}}</text>
   <text x="128" y="99" font-size="11.5" fill="{{DIM}}">{{LINHA}}</text>
 
   <!-- medalhao de nivel -->
