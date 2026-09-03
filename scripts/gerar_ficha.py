@@ -70,6 +70,7 @@ query($login: String!) {
     contributionsCollection { contributionCalendar { totalContributions } }
     repositories(first: 100, ownerAffiliations: OWNER, isFork: false,
                  orderBy: {field: PUSHED_AT, direction: DESC}) {
+      totalCount
       nodes {
         name pushedAt isPrivate stargazerCount forkCount
         primaryLanguage { name }
@@ -105,6 +106,7 @@ def buscar(login):
         "local": u.get("location") or "",
         "seguidores": u["followers"]["totalCount"],
         "commits": u["contributionsCollection"]["contributionCalendar"]["totalContributions"],
+        "repos_total": u["repositories"]["totalCount"],
         "repos": [{
             "nome": r["name"], "push": r["pushedAt"], "privado": r["isPrivate"],
             "estrelas": r["stargazerCount"], "forks": r["forkCount"],
@@ -127,6 +129,8 @@ def derivar(d):
     selados = sum(1 for r in repos if r["privado"])
     estrelas = sum(r["estrelas"] for r in repos)
     forks = sum(r["forks"] for r in repos)
+    max_estrelas = max((r["estrelas"] for r in repos), default=0)
+    total_repos = d.get("repos_total", len(repos))
     anos = dias(d["criado"]) / 365.25
     recentes = sum(1 for r in repos if dias(r["push"]) < 90)
 
@@ -142,6 +146,7 @@ def derivar(d):
     nivel = max(1, min(99, round(escala(len(repos), 200, 40) +
                                  escala(estrelas, 5000, 35) + anos * 2)))
     return {**d, "selados": selados, "estrelas": estrelas, "forks": forks,
+            "max_estrelas": max_estrelas, "total_repos": total_repos,
             "anos": anos, "recentes": recentes, "lings": lings, "topo": topo,
             "nivel": nivel, "classe": CLASSES.get(topo, FALLBACK_CLASSE)}
 
@@ -159,21 +164,50 @@ def atributos(d):
     ]
 
 
-def lista_feitos(d):
-    return [
-        ("Primeiro passo", len(d["repos"]) >= 1, "Ergueu o primeiro repositorio"),
-        ("Guarda de dez portoes", len(d["repos"]) >= 10, "Mantem 10 ou mais repositorios proprios"),
-        ("Senhor de vinte torres", len(d["repos"]) >= 20, "Passou de 20 repositorios entre publicos e selados"),
-        ("Poliglota", len(d["lings"]) >= 4, "Empunha 4 ou mais linguagens em projetos reais"),
-        ("Veterano", d["anos"] >= 3, "Mais de 3 anos desde o primeiro commit"),
-        ("Anciao do reino", d["anos"] >= 8, "Exige 8 anos desde o primeiro commit"),
-        ("Guardiao de segredos", d["selados"] >= 5, "5 ou mais repositorios selados"),
-        ("Vigilia ativa", d["recentes"] >= 5, "5 ou mais repositorios com push nos ultimos 90 dias"),
-        ("Primeira estrela", d["estrelas"] >= 1, "Recebeu a primeira estrela"),
-        ("Constelacao", d["estrelas"] >= 25, "Exige 25 estrelas recebidas"),
-        ("Obra copiada", d["forks"] >= 5, "5 ou mais forks feitos por outras pessoas"),
-        ("Reunidor de tropas", d["seguidores"] >= 10, "10 ou mais seguidores"),
-    ]
+# tiers de ranqueado, do mais baixo ao mais alto - cada um com cor propria
+TIERS = [
+    ("Ferro", "#53585c"),
+    ("Bronze", "#8a5a3c"),
+    ("Prata", "#9aa5ad"),
+    ("Ouro", "#e0a526"),
+    ("Platina", "#2fb8a6"),
+    ("Esmeralda", "#1fae64"),
+    ("Diamante", "#4f7fdb"),
+    ("Mestre", "#a142c9"),
+    ("Grao-Mestre", "#e0393e"),
+    ("Desafiante", "#f4e04d"),
+]
+SEM_TIER = ("Sem tier", "#5a5245")
+
+# nome, campo em d (ou funcao), unidade, limiares dos 10 tiers
+CONQUISTAS = [
+    ("Repositorios Proprios", "total_repos", "repositorios", [1, 5, 10, 20, 35, 50, 75, 100, 150, 250]),
+    ("Estrelas Recebidas", "estrelas", "estrelas", [1, 5, 15, 35, 75, 150, 300, 600, 1200, 2500]),
+    ("Forks Recebidos", "forks", "forks", [1, 3, 8, 15, 30, 60, 120, 250, 500, 1000]),
+    ("Seguidores", "seguidores", "seguidores", [1, 5, 15, 30, 60, 120, 250, 500, 1000, 2500]),
+    ("Linguagens Dominadas", lambda d: len(d["lings"]), "linguagens", [1, 2, 3, 4, 6, 8, 10, 13, 16, 20]),
+    ("Anos de Estrada", "anos", "anos", [0.5, 1, 2, 3, 4, 5, 7, 9, 12, 15]),
+    ("Cofres Selados", "selados", "selados", [1, 2, 4, 7, 12, 20, 35, 55, 80, 120]),
+    ("Vigilia Ativa", "recentes", "ativos", [1, 2, 4, 6, 9, 13, 18, 25, 35, 50]),
+    ("Contribuicoes no Ano", "commits", "commits", [1, 50, 150, 300, 500, 750, 1000, 1500, 2500, 4000]),
+    ("Repositorio Mais Popular", "max_estrelas", "estrelas no top", [1, 5, 15, 40, 100, 250, 600, 1500, 4000, 10000]),
+]
+
+
+def tier_de(valor, limiares):
+    idx = -1
+    for i, limite in enumerate(limiares):
+        if valor >= limite:
+            idx = i
+    return idx
+
+
+def lista_conquistas(d):
+    out = []
+    for nome, campo, unidade, limiares in CONQUISTAS:
+        valor = campo(d) if callable(campo) else d[campo]
+        out.append((nome, unidade, valor, tier_de(valor, limiares), limiares))
+    return out
 
 
 def cronica_recente(d):
@@ -188,7 +222,7 @@ PAL_HP, PAL_MP, PAL_ST = "#8c2f2f", "#3f7a8c", "#6b8f3a"
 VELLUM, DIM = "#e6d3a3", "#8a7c62"
 
 EQUIP_CARDS_Y, EQUIP_CARD_H = 458, 68
-FEITOS_ROWS_Y0, FEITOS_ROW_H = 580, 22
+FEITOS_ROWS_Y0, FEITOS_ROW_H = 584, 25
 CRONICA_ROWS_Y0, CRONICA_ROW_H = 882, 22
 PERG_TEXT_Y0, PERG_LINE_H = 1052, 20
 PERG_TABLE_Y0, PERG_ROW_H = 1112, 22
@@ -277,17 +311,34 @@ def svg_equipamento(d, v):
     return "".join(out)
 
 
-def svg_feitos(d, v):
+def svg_tier_pill(x, y, texto, cor_hex):
+    r, g, b = (int(cor_hex[i:i + 2], 16) for i in (1, 3, 5))
+    luminancia = 0.299 * r + 0.587 * g + 0.114 * b
+    texto_cor = "#1b1f22" if luminancia > 150 else "#f2ead2"
+    largura = round(16 + len(texto) * 6)
+    svg = (f'<rect x="{x}" y="{y}" width="{largura}" height="16" rx="3" fill="{cor_hex}"/>'
+           f'<text x="{x + largura / 2:.0f}" y="{y + 12}" font-size="9.5" font-weight="bold" '
+           f'text-anchor="middle" fill="{texto_cor}">{texto.upper()}</text>')
+    return svg, largura
+
+
+def svg_conquistas(d, v):
     out = []
-    for i, (nome, ganho, dica) in enumerate(lista_feitos(d)):
+    for i, (nome, unidade, valor, tier_idx, limiares) in enumerate(lista_conquistas(d)):
         y = FEITOS_ROWS_Y0 + i * FEITOS_ROW_H
-        simbolo = "✦" if ganho else "✧"
-        cor_nome = v["GOLD"] if ganho else v["DIM"]
-        prefixo = "" if ganho else "Bloqueado - "
+        tier_nome, tier_cor = TIERS[tier_idx] if tier_idx >= 0 else SEM_TIER
+        pill_svg, pill_w = svg_tier_pill(16, y - 12, tier_nome, tier_cor)
+        out.append(pill_svg)
+        valor_fmt = f"{valor:.1f}" if isinstance(valor, float) else str(valor)
         out.append(
-            f'<text x="16" y="{y}" font-size="11.5" fill="{cor_nome}">{simbolo} {escapar(nome)}'
-            f'<tspan fill="{v["DIM"]}"> - {prefixo}{escapar(dica)}</tspan></text>'
+            f'<text x="{16 + pill_w + 10}" y="{y}" font-size="11.5" fill="{v["VELLUM"]}">{escapar(nome)}'
+            f'<tspan fill="{v["DIM"]}"> - {valor_fmt} {escapar(unidade)}</tspan></text>'
         )
+        if tier_idx < len(limiares) - 1:
+            prox = f"prox: {TIERS[tier_idx + 1][0]}"
+        else:
+            prox = "tier maximo"
+        out.append(f'<text x="864" y="{y}" font-size="10" text-anchor="end" fill="{v["DIM"]}">{escapar(prox)}</text>')
     return "".join(out)
 
 
@@ -393,7 +444,7 @@ def montar_svg(d):
         v[f"N_{letra}"], v[f"V_{letra}"], v[f"D_{letra}"] = escapar(nome), str(valor), escapar(porque)
 
     v["BLOCO_EQUIP"] = svg_equipamento(d, v)
-    v["BLOCO_FEITOS"] = svg_feitos(d, v)
+    v["BLOCO_FEITOS"] = svg_conquistas(d, v)
     v["BLOCO_CRONICA"] = svg_cronica(d, v)
     v["BLOCO_PERGAMINHO"] = svg_pergaminho(v)
     v["BLOCO_GRIMORIO"] = svg_grimorio(v)

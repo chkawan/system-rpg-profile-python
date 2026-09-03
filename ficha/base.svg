@@ -109,8 +109,8 @@
   <rect x="16" y="444" width="848" height="2" fill="{{DARK}}"/>
   {{BLOCO_EQUIP}}
 
-  <!-- feitos -->
-  <text x="16" y="556" font-size="15" font-weight="bold" fill="{{GOLD}}">FEITOS</text>
+  <!-- conquistas -->
+  <text x="16" y="556" font-size="15" font-weight="bold" fill="{{GOLD}}">CONQUISTAS</text>
   <rect x="16" y="564" width="848" height="2" fill="{{DARK}}"/>
   {{BLOCO_FEITOS}}
 
