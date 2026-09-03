@@ -29,10 +29,18 @@ REPOS = [
  ("study-notes-collection","2026-01-10",False,0,None,False,None),
  ("prompt-engineered-decision-agent","2025-12-20",False,0,None,False,None),
 ]
+PINNED = [
+ ("system-personal-django", 1, "Python"),
+ ("tool-password-generator-python", 3, "Python"),
+ ("ecommerce", 2, "PHP"),
+ ("bot-whatsapp-support-node", 0, "JavaScript"),
+ ("portfolio-2.0", 5, "TypeScript"),
+]
 PREVIA = {
  "nome":"Christopher Kawan","login":"chkawan",
  "criado":"2022-01-27T00:00:00Z","local":"Rio de Janeiro, BR",
  "seguidores":4,"commits":123,
  "repos":[{"nome":n,"push":p+"T00:00:00Z","privado":pr,"estrelas":e,"tem_url":u,"descricao":ds,"ling":l}
           for n,p,pr,e,l,u,ds in REPOS],
+ "pinned":[{"nome":n,"estrelas":e,"ling":l} for n,e,l in PINNED],
 }

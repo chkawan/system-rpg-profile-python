@@ -30,18 +30,6 @@ CORES = {
 # armaduras: ferramentas/plataformas do dia a dia - curado a mao porque a
 # API do GitHub nao da esse nivel de detalhe (framework, nuvem, BI...),
 # diferente de habilidades (linguagem), que vem direto dos repos
-# boneco de equipamento: 5 slots num "+" (elmo em cima, arma de cada lado,
-# armadura e bota no centro/baixo), igual o paper-doll de RPG - cada slot
-# mapeado pra uma ferramenta do dia a dia, curado a mao (a API do GitHub
-# nao da esse nivel de detalhe de stack)
-ARMADURAS = [
-    ("elmo", "AWS", "232F3E"),
-    ("arma_esq", "Git", "F05032"),
-    ("armadura", "Django", "092E20"),
-    ("arma_dir", "APIs REST", "005571"),
-    ("bota", "PostgreSQL", "336791"),
-]
-
 # conteudo estatico do "Pergaminho do aventureiro" e do "Grimorio" - nao vem
 # da API do GitHub, e o texto de bio/skills que edita direto aqui.
 BIO_TEXTO = (
@@ -74,6 +62,14 @@ query($login: String!) {
       nodes {
         name pushedAt isPrivate stargazerCount homepageUrl description
         primaryLanguage { name }
+      }
+    }
+    pinnedItems(first: 6, types: REPOSITORY) {
+      nodes {
+        ... on Repository {
+          name stargazerCount
+          primaryLanguage { name }
+        }
       }
     }
   }
@@ -113,6 +109,10 @@ def buscar(login):
             "descricao": r["description"],
             "ling": (r["primaryLanguage"] or {}).get("name"),
         } for r in u["repositories"]["nodes"]],
+        "pinned": [{
+            "nome": r["name"], "estrelas": r["stargazerCount"],
+            "ling": (r["primaryLanguage"] or {}).get("name"),
+        } for r in u["pinnedItems"]["nodes"]],
     }
 
 
@@ -185,7 +185,8 @@ def derivar(d):
     return {**d, "selados": selados, "estrelas": estrelas,
             "com_url": com_url, "total_repos": total_repos,
             "anos": anos, "recentes": recentes, "lings": lings,
-            "missoes": missoes, "nivel": nivel}
+            "missoes": missoes, "nivel": nivel,
+            "pinned": d.get("pinned", [])[:5]}
 
 
 def atributos(d):
@@ -405,9 +406,9 @@ def escapar(texto):
 
 
 def svg_slot(cx, cy, w, nome, cor_hex, v):
-    """Um slot de equipamento: moldura + preenchimento na cor da ferramenta
-    + nome embaixo. Sem icone proprio (nao temos um por ferramenta), entao
-    o nome faz esse papel."""
+    """Um slot de equipamento preenchido: moldura + preenchimento na cor da
+    linguagem do repo fixado + nome embaixo (sem icone por repo, o nome faz
+    esse papel)."""
     cor = cor_hex if cor_hex.startswith("#") else "#" + cor_hex
     r = w / 2
     return (
@@ -419,10 +420,23 @@ def svg_slot(cx, cy, w, nome, cor_hex, v):
     )
 
 
+def svg_slot_vazio(cx, cy, w, v):
+    """Slot sem repo fixado nessa posicao - convite pra equipar algo."""
+    r = w / 2
+    return (
+        f'<rect x="{cx - r:.0f}" y="{cy - r:.0f}" width="{w}" height="{w}" rx="4" '
+        f'fill="none" stroke="{v["DIM"]}" stroke-width="1.5" stroke-dasharray="4,3"/>'
+        f'<text x="{cx:.0f}" y="{cy + 4:.0f}" font-size="16" text-anchor="middle" fill="{v["DIM"]}">+</text>'
+        f'<text x="{cx:.0f}" y="{cy + r + 11:.0f}" font-size="8.5" text-anchor="middle" '
+        f'fill="{v["DIM"]}">vazio</text>'
+    )
+
+
 def svg_equipamento(d, v, icone_classe_fundo):
     """Duas secoes lado a lado: EQUIPAMENTO - um boneco em cruz (elmo,
     arma, armadura, arma, bota) com o icone da classe atual desenhado
-    atras, meio transparente, como o personagem que veste tudo isso - e
+    atras, meio transparente, e cada slot preenchido por um dos seus repos
+    fixados no perfil (equipar de verdade = dar pin no GitHub) - e
     HABILIDADES (linguagem = skill, nivel = % dos repos, dado real)."""
     x_hab = 452
     largura_col = 396
@@ -430,13 +444,21 @@ def svg_equipamento(d, v, icone_classe_fundo):
 
     cx_arm, w_slot, gap_h = 214, 40, 14
     cy_elmo, cy_meio, cy_bota = 500, 556, 612
-    ferramenta = {slot: (nome, cor) for slot, nome, cor in ARMADURAS}
+    posicoes = [
+        (cx_arm, cy_elmo),
+        (cx_arm - w_slot - gap_h, cy_meio),
+        (cx_arm, cy_meio),
+        (cx_arm + w_slot + gap_h, cy_meio),
+        (cx_arm, cy_bota),
+    ]
     out.append(f'<g opacity="0.16">{icone_classe_fundo(cx_arm, cy_meio, v["GOLD"], v["GOLD"])}</g>')
-    out.append(svg_slot(cx_arm, cy_elmo, w_slot, *ferramenta["elmo"], v))
-    out.append(svg_slot(cx_arm - w_slot - gap_h, cy_meio, w_slot, *ferramenta["arma_esq"], v))
-    out.append(svg_slot(cx_arm, cy_meio, w_slot, *ferramenta["armadura"], v))
-    out.append(svg_slot(cx_arm + w_slot + gap_h, cy_meio, w_slot, *ferramenta["arma_dir"], v))
-    out.append(svg_slot(cx_arm, cy_bota, w_slot, *ferramenta["bota"], v))
+    for i, (sx, sy) in enumerate(posicoes):
+        if i < len(d["pinned"]):
+            repo = d["pinned"][i]
+            cor = CORES.get(repo["ling"], "8a7c62")
+            out.append(svg_slot(sx, sy, w_slot, truncar(nome_missao(repo["nome"]), 12), cor, v))
+        else:
+            out.append(svg_slot_vazio(sx, sy, w_slot, v))
 
     if not d["lings"]:
         out.append(f'<text x="{x_hab}" y="{EQUIP_ROWS_Y0}" font-size="11.5" '
