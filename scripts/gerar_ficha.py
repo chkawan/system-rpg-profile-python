@@ -197,11 +197,11 @@ def atributos(d):
     # de linguagens), sabedoria e disciplina/forca de vontade (constancia
     # de commits) e carisma e presenca social (quem te segue).
     return [
-        ("Forca", escala(d["total_repos"], 200),
-         f'{d["total_repos"]} repositorios erguidos'),
-        ("Destreza", escala(d["recentes"], 50), f'{d["recentes"]} repositorios com push recente'),
-        ("Constituicao", escala(d["anos"], 15), f'{d["anos"]:.1f} anos de estrada sem parar'),
-        ("Inteligencia", escala(len(d["lings"]), 20), f'{len(d["lings"])} linguagens estudadas'),
+        ("Força", escala(d["total_repos"], 200),
+         f'{d["total_repos"]} repositórios erguidos'),
+        ("Destreza", escala(d["recentes"], 50), f'{d["recentes"]} repositórios com push recente'),
+        ("Constituição", escala(d["anos"], 15), f'{d["anos"]:.1f} anos de estrada sem parar'),
+        ("Inteligência", escala(len(d["lings"]), 20), f'{len(d["lings"])} linguagens estudadas'),
         ("Sabedoria", escala(d["commits"], 3000), f'{d["commits"]} commits de disciplina no ano'),
         ("Carisma", escala(d["seguidores"], 5000), f'{d["seguidores"]} seguidores no reino'),
     ]
@@ -243,29 +243,29 @@ def img_icone(caminho, tamanho=32):
 # grande, atras do equipamento - dois tamanhos, mesmo desenho
 CLASSE_TITULOS = {
     "guerreiro": ("Guerreiro, o Forjador",
-                  "ergue tudo na base da forca bruta", "class/guerreiro.png"),
-    "arqueiro": ("Arqueiro, o Cacador de Bugs",
+                  "ergue tudo na base da força bruta", "class/guerreiro.png"),
+    "arqueiro": ("Arqueiro, o Caçador de Bugs",
                  "acerta de longe, sem falhar", "class/arqueiro.png"),
     "aventureiro": ("Aventureiro, o Sobrevivente",
                      "sobrevive a qualquer legado", "class/aventureiro.png"),
-    "mago": ("Mago, o Tecelao",
-             "tece logica onde so havia caos", "class/mago.png"),
-    "curandeiro": ("Curandeiro, o Guardiao",
-                   "mantem tudo de pe", "class/healer.png"),
+    "mago": ("Mago, o Tecelão",
+             "tece lógica onde só havia caos", "class/mago.png"),
+    "curandeiro": ("Curandeiro, o Guardião",
+                   "mantém tudo de pé", "class/healer.png"),
     "ladino": ("Ladino, o Explorador",
-               "acha a brecha que ninguem viu", "class/ladino.png"),
+               "acha a brecha que ninguém viu", "class/ladino.png"),
 }
 
 
 def determinar_classe(pontos, vida_pct, mana_pct, vigor_pct):
-    """Forca+Vigor -> Guerreiro, Destreza -> Arqueiro, Constituicao+Vida ->
-    Aventureiro, Inteligencia+Mana -> Mago, Sabedoria -> Curandeiro,
+    """Força+Vigor -> Guerreiro, Destreza -> Arqueiro, Constituição+Vida ->
+    Aventureiro, Inteligência+Mana -> Mago, Sabedoria -> Curandeiro,
     Carisma -> Ladino. O vital só entra pra quem tem um vital associado."""
     candidatos = {
-        "guerreiro": pontos["Forca"] + vigor_pct * 5,
+        "guerreiro": pontos["Força"] + vigor_pct * 5,
         "arqueiro": pontos["Destreza"],
-        "aventureiro": pontos["Constituicao"] + vida_pct * 5,
-        "mago": pontos["Inteligencia"] + mana_pct * 5,
+        "aventureiro": pontos["Constituição"] + vida_pct * 5,
+        "mago": pontos["Inteligência"] + mana_pct * 5,
         "curandeiro": pontos["Sabedoria"],
         "ladino": pontos["Carisma"],
     }
@@ -295,7 +295,7 @@ TIERS = [
     ("Esmeralda", "#1fae64"),
     ("Diamante", "#4f7fdb"),
     ("Mestre", "#a142c9"),
-    ("Grao-Mestre", "#e0393e"),
+    ("Grão-Mestre", "#e0393e"),
     ("Desafiante", "#f4e04d"),
 ]
 SEM_TIER = ("Sem tier", "#5a5245")
@@ -306,8 +306,8 @@ SEM_TIER = ("Sem tier", "#5a5245")
 # funcao), descricao curta do que faz upar, icone gravado na medalha,
 # limiares dos 10 tiers
 CONQUISTAS = [
-    ("Ritmo de Forja", "commits", "commits no ultimo ano", img_icone("conquistas/forja.png", 34), [1, 50, 150, 300, 500, 750, 1000, 1500, 2500, 4000]),
-    ("Cofres Selados", "selados", "repositorios privados", img_icone("conquistas/cofre.png", 34), [1, 2, 4, 7, 12, 20, 35, 55, 80, 120]),
+    ("Ritmo de Forja", "commits", "commits no último ano", img_icone("conquistas/forja.png", 34), [1, 50, 150, 300, 500, 750, 1000, 1500, 2500, 4000]),
+    ("Cofres Selados", "selados", "repositórios privados", img_icone("conquistas/cofre.png", 34), [1, 2, 4, 7, 12, 20, 35, 55, 80, 120]),
     ("Magias Dominadas", lambda d: len(d["lings"]), "linguagens diferentes", img_icone("conquistas/magias.png", 34), [1, 2, 3, 4, 6, 8, 10, 13, 16, 20]),
     ("Anos de Jornada", "anos", "anos de conta ativa", img_icone("conquistas/ano.png", 34), [0.5, 1, 2, 3, 4, 5, 7, 9, 12, 15]),
     ("Portais Abertos", "com_url", "repos com link no ar", img_icone("conquistas/portal.png", 34), [1, 2, 4, 6, 9, 13, 18, 25, 35, 50]),
@@ -553,7 +553,7 @@ def svg_missoes(d, v):
         if r["descricao"]:
             desc = escapar(truncar(r["descricao"], 55))
             out.append(f'<text x="340" y="{y}" font-size="10" font-style="italic" fill="{cor_fraca}">{desc}</text>')
-        status = "CONCLUIDA" if concluida else "EM PROGRESSO"
+        status = "CONCLUÍDA" if concluida else "EM PROGRESSO"
         out.append(f'<text x="864" y="{y}" font-size="9.5" font-weight="bold" text-anchor="end" '
                     f'fill="{cor_fraca}">{status}</text>')
     return "".join(out)
@@ -597,9 +597,9 @@ def montar_svg(d):
     # Inteligencia (repertorio de linguagens) e VIGOR vem de Forca (musculo
     # pra sustentar o ritmo). O preenchimento atual usa um sinal recente
     # relacionado, sempre limitado a esse teto.
-    vida_max = pontos["Constituicao"] * 25
-    mana_max = pontos["Inteligencia"] * 25
-    vigor_max = pontos["Forca"] * 25
+    vida_max = pontos["Constituição"] * 25
+    mana_max = pontos["Inteligência"] * 25
+    vigor_max = pontos["Força"] * 25
     vida_atual = min(vida_max, 40 + d["recentes"] * 15)
     mana_atual = min(mana_max, 30 + d["estrelas"] * 3)
     vigor_atual = min(vigor_max, d["commits"])
@@ -658,7 +658,7 @@ def montar_svg(d):
         ("HDR_HABILIDADES", 436, "HABILIDADES", img_icone("secoes/habilidades.png", 26), 452, 396),
         ("HDR_PERGAMINHO", 681, "PERGAMINHO DO AVENTUREIRO", img_icone("secoes/pergaminho.png", 26), 16, 848),
         ("HDR_CONQUISTAS", 887, "CONQUISTAS", img_icone("secoes/conquista.png", 26), 16, 848),
-        ("HDR_MISSOES", 1089, "MISSOES", img_icone("secoes/missoes.png", 26), 16, 848),
+        ("HDR_MISSOES", 1089, "MISSÕES", img_icone("secoes/missoes.png", 26), 16, 848),
         ("HDR_JURAMENTO", 1371, "JURAMENTO", img_icone("secoes/juramento.png", 26), 16, 848),
         ("HDR_TAVERNA", 1475, "TAVERNA", img_icone("secoes/taverna.png", 26), 16, 848),
     ]

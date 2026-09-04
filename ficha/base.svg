@@ -37,7 +37,7 @@
   <rect x="772" y="24" width="80" height="80" fill="{{DARK}}"/>
   <rect x="776" y="28" width="72" height="72" fill="none" stroke="{{GOLD}}" stroke-width="3"/>
   <text x="812" y="72" font-size="34" font-weight="bold" text-anchor="middle" fill="{{GOLD}}">{{NIVEL}}</text>
-  <text x="812" y="90" font-size="9" text-anchor="middle" fill="{{DIM}}">NIVEL</text>
+  <text x="812" y="90" font-size="9" text-anchor="middle" fill="{{DIM}}">NÍVEL</text>
 
   <!-- trilhos das barras -->
   <rect x="84" y="136" width="640" height="14" fill="{{DARK}}"/>
