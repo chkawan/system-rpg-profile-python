@@ -1,2 +1,7 @@
 __pycache__/
 *.pyc
+
+# Local editor / AI tool config (not meant for a public repo)
+.claude/
+.vscode/
+.cursor/
