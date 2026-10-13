@@ -13,4 +13,4 @@
 
 </div>
 
-<sub>Ficha forjada automaticamente em <!-- ficha:carimbo:inicio -->12/10/2026 15:04 UTC<!-- ficha:carimbo:fim --></sub>
+<sub>Ficha forjada automaticamente em <!-- ficha:carimbo:inicio -->13/10/2026 13:58 UTC<!-- ficha:carimbo:fim --></sub>
