@@ -67,6 +67,9 @@ query($login: String!) {
       nodes {
         name pushedAt isPrivate stargazerCount homepageUrl description
         primaryLanguage { name }
+        languages(first: 10, orderBy: {field: SIZE, direction: DESC}) {
+          edges { size node { name } }
+        }
       }
     }
     pinnedItems(first: 6, types: REPOSITORY) {
@@ -121,6 +124,9 @@ def buscar(login):
             "estrelas": r["stargazerCount"], "tem_url": bool(r["homepageUrl"]),
             "descricao": r["description"],
             "ling": (r["primaryLanguage"] or {}).get("name"),
+            "linguagens_bytes": [
+                {"nome": e["node"]["name"], "bytes": e["size"]} for e in r["languages"]["edges"]
+            ],
         } for r in u["repositories"]["nodes"]],
         "pinned": [{
             "nome": r["name"], "estrelas": r["stargazerCount"],
@@ -237,11 +243,10 @@ def derivar(d):
     anos = dias(d["criado"]) / 365.25
     missoes = selecionar_missoes(repos, d["login"])
 
-    # linguagem por contagem de repos onde aparece como principal. Bytes
-    # reais por linguagem (languages{} no GraphQL) ficaria mais preciso,
-    # mas esse campo exige permissao de leitura de conteudo do token
-    # (mesma causa que quebrou o workflow com defaultBranchRef/history) -
-    # revertido pro que ja funcionava ate ter um token com esse escopo.
+    # linguagem por contagem de repos onde aparece como principal (usado
+    # pela Inteligencia e pelas barras de Habilidades). O bonus de XP por
+    # linguagem (abaixo) usa o dado por repo (linguagens_bytes), que e
+    # mais granular - exige token com permissao de leitura de conteudo.
     contagem = {}
     for r in repos:
         if r["ling"]:
@@ -257,12 +262,20 @@ def derivar(d):
     # contribuicoes do ano dividido pelo total de repositorios.
     media_commits_repo = d["commits"] / (total_repos or 1)
 
+    # XP recompensa esforco de verdade, nao popularidade: 100 por ano de
+    # estrada, 25 por commit (contribuicoes do ultimo ano), 100 por
+    # projeto erguido, e +10 por linguagem diferente DENTRO de cada
+    # projeto (um repo com 10 linguagens da 100xp so de bonus de
+    # linguagem, alem dos 100xp do projeto em si).
+    xp_linguagens = sum(len(r.get("linguagens_bytes", [])) for r in repos) * 10
+    xp = round(anos * 100 + d["commits"] * 25 + total_repos * 100 + xp_linguagens)
+
     nivel = max(1, min(100, round(escala(total_repos, 200, teto=40) +
                                   escala(estrelas, 5000, teto=35) + anos * 2)))
     return {**d, "selados": selados, "estrelas": estrelas,
             "com_url": com_url, "total_repos": total_repos,
             "anos": anos, "lings": lings,
-            "media_commits_repo": media_commits_repo,
+            "media_commits_repo": media_commits_repo, "xp": xp,
             "missoes": missoes, "nivel": nivel,
             "pinned": d.get("pinned", [])[:5]}
 
@@ -772,7 +785,7 @@ def montar_svg(d):
         ("VIDA", vida_atual, vida_max, PAL_HP),
         ("MANA", mana_atual, mana_max, PAL_MP),
         ("VIGOR", vigor_atual, vigor_max, PAL_ST),
-        ("EXP", d["nivel"] % 10 * 100 + 40, 1000, gold),
+        ("EXP", d["xp"], d["xp"] or 1, gold),
     ]
 
     v = {
