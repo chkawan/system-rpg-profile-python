@@ -205,18 +205,21 @@ def atributos(d):
     # peso de 0.5-1.6 nao bastava: os brutos (antes do peso) de repos,
     # anos, linguagens e commits ficam todos entre 0.6-0.75 (o log
     # comprime demais), entao so um peso bem mais extremo nas pontas
-    # (0.3 a 2.0) separa de verdade - e so isso nao resolvia a Sabedoria
+    # (0.3 a 1.8) separa de verdade - e so isso nao resolvia a Sabedoria
     # (o teto de 3000 commits/ano e baixo demais, commit trivial infla
-    # fácil), por isso o teto dela tambem subiu pra 5000. Carisma ganhou
-    # o mesmo tratamento (teto maior + peso baixo) pra 1000 seguidores
-    # nao virar nota maxima sem nenhum sinal tecnico por tras.
+    # fácil), por isso o teto dela tambem subiu pra 5000. Commit e um
+    # sinal de alta frequencia (cada commit trivial conta), entao o peso
+    # fica igual ao da Força (baseline) em vez de ser o mais generoso.
+    # Carisma ganhou o mesmo tratamento de teto maior + peso baixo pra
+    # 1000 seguidores nao virar nota maxima sem nenhum sinal tecnico por
+    # tras.
     return [
         ("Força", escala(d["total_repos"], 200, peso=1.0),
          f'{d["total_repos"]} repositórios erguidos'),
         ("Destreza", escala(d["recentes"], 50, peso=0.6), f'{d["recentes"]} repositórios com push recente'),
         ("Constituição", escala(d["anos"], 15, peso=1.8), f'{d["anos"]:.1f} anos de estrada sem parar'),
         ("Inteligência", escala(len(d["lings"]), 20, peso=1.4), f'{len(d["lings"])} linguagens estudadas'),
-        ("Sabedoria", escala(d["commits"], 5000, peso=2.0), f'{d["commits"]} commits de disciplina no ano'),
+        ("Sabedoria", escala(d["commits"], 5000, peso=1.0), f'{d["commits"]} commits de disciplina no ano'),
         ("Carisma", escala(d["seguidores"], 6000, peso=0.3), f'{d["seguidores"]} seguidores no reino'),
     ]
 
