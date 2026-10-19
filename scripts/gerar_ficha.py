@@ -219,7 +219,6 @@ def derivar(d):
     com_url = sum(1 for r in repos if r["tem_url"])
     total_repos = d.get("repos_total", len(repos))
     anos = dias(d["criado"]) / 365.25
-    recentes = sum(1 for r in repos if dias(r["push"]) < 90)
     missoes = selecionar_missoes(repos, d["login"])
 
     # linguagem por contagem de repos onde aparece como principal. Bytes
@@ -246,7 +245,7 @@ def derivar(d):
                                  escala(estrelas, 5000, teto=35) + anos * 2)))
     return {**d, "selados": selados, "estrelas": estrelas,
             "com_url": com_url, "total_repos": total_repos,
-            "anos": anos, "recentes": recentes, "lings": lings,
+            "anos": anos, "lings": lings,
             "media_commits_repo": media_commits_repo,
             "missoes": missoes, "nivel": nivel,
             "pinned": d.get("pinned", [])[:5]}
@@ -340,20 +339,28 @@ CLASSE_TITULOS = {
 # tanque de vigor com mana simbolica, mago fragil estourando de mana,
 # cada arquetipo com a cara dele em vez de todo mundo convergir pro mesmo
 # numero.
+# vida_base/vida_por_nivel vem direto do manual (D&D 5E - Livro do
+# Jogador, pag. 11/14): PV 1o nivel = dado maximo + mod. CON; PV por
+# nivel seguinte = media fixa do dado + mod. CON. Medias por dado: d12->7
+# (Barbaro), d10->6 (Guerreiro/Patrulheiro), d8->5 (Clerigo/Ladino),
+# d6->4 (Mago). Aventureiro nao tem classe real equivalente - usa o dado
+# mais resistente (d12) por ser o "sobrevivente". Vigor nao existe no
+# D&D (so Vida e Magia) - invenção nossa pra classe fisica ter um
+# recurso proprio, calibrada a mao pra ficar coerente com a Vida.
 CLASSE_VITAIS = {
-    "guerreiro":   dict(vida_base=12, vida_por_nivel=7,
+    "guerreiro":   dict(vida_base=10, vida_por_nivel=6,
                          vigor_base=14, vigor_por_nivel=6, vigor_attr="Força",
                          mana_base=4, mana_por_nivel=1, mana_attr="Inteligência"),
-    "arqueiro":    dict(vida_base=9, vida_por_nivel=5,
+    "arqueiro":    dict(vida_base=10, vida_por_nivel=6,
                          vigor_base=12, vigor_por_nivel=5, vigor_attr="Destreza",
                          mana_base=4, mana_por_nivel=1, mana_attr="Sabedoria"),
-    "ladino":      dict(vida_base=8, vida_por_nivel=4,
+    "ladino":      dict(vida_base=8, vida_por_nivel=5,
                          vigor_base=11, vigor_por_nivel=5, vigor_attr="Destreza",
                          mana_base=5, mana_por_nivel=1, mana_attr="Inteligência"),
-    "aventureiro": dict(vida_base=13, vida_por_nivel=7,
+    "aventureiro": dict(vida_base=12, vida_por_nivel=7,
                          vigor_base=10, vigor_por_nivel=4, vigor_attr="Constituição",
                          mana_base=5, mana_por_nivel=1, mana_attr="Inteligência"),
-    "mago":        dict(vida_base=5, vida_por_nivel=3,
+    "mago":        dict(vida_base=6, vida_por_nivel=4,
                          vigor_base=4, vigor_por_nivel=1, vigor_attr="Força",
                          mana_base=13, mana_por_nivel=6, mana_attr="Inteligência"),
     "curandeiro":  dict(vida_base=8, vida_por_nivel=5,
@@ -735,15 +742,16 @@ def montar_svg(d):
     # crescimento por nivel, mais o atributo que alimenta aquele vital
     # vezes 2. Cada classe tem sua propria tabela nos 3 vitais (ver
     # CLASSE_VITAIS), entao guerreiro e mago nao convergem pro mesmo
-    # numero so porque tem o mesmo nivel. O preenchimento atual usa um
-    # sinal recente relacionado, sempre limitado a esse teto.
+    # numero so porque tem o mesmo nivel. Atual = maximo sempre: a ficha
+    # retrata o personagem em pleno vigor (full), nao um estado de
+    # "gastou X de Y" no meio de uma missao.
     cfg = CLASSE_VITAIS[classe_chave]
     vida_max = cfg["vida_base"] + cfg["vida_por_nivel"] * (d["nivel"] - 1) + pontos["Constituição"] * 2
     vigor_max = cfg["vigor_base"] + cfg["vigor_por_nivel"] * (d["nivel"] - 1) + pontos[cfg["vigor_attr"]] * 2
     mana_max = cfg["mana_base"] + cfg["mana_por_nivel"] * (d["nivel"] - 1) + pontos[cfg["mana_attr"]] * 2
-    vida_atual = min(vida_max, 40 + d["recentes"] * 15)
-    mana_atual = min(mana_max, 30 + d["estrelas"] * 3)
-    vigor_atual = min(vigor_max, d["commits"])
+    vida_atual = vida_max
+    mana_atual = mana_max
+    vigor_atual = vigor_max
     vitais = [
         ("VIDA", vida_atual, vida_max, PAL_HP),
         ("MANA", mana_atual, mana_max, PAL_MP),
