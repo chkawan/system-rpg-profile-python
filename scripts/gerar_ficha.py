@@ -144,6 +144,35 @@ def escala(v, mx, peso=1.0, teto=30):
     return max(1, min(teto, round(curvado * teto)))
 
 
+# custo pra sair do nivel N (ir pro N+1): comeca em XP_BASE e cresce
+# composto (vezes XP_MULTIPLICADOR) a cada nivel, acumulado - sair do
+# nivel 1 custa 100, do nivel 2 custa 150, do nivel 3 custa 225... Isso
+# faz nivel alto ficar raro de verdade (nivel 15-17 ja exige dezenas de
+# milhares de XP), em vez de todo mundo ativo chegar perto do teto.
+XP_BASE, XP_MULTIPLICADOR = 100, 1.5
+
+
+def nivel_de_xp(xp, nivel_max=100):
+    nivel = 1
+    limiar = XP_BASE
+    acumulado = 0
+    while nivel < nivel_max and xp >= acumulado + limiar:
+        acumulado += limiar
+        nivel += 1
+        limiar *= XP_MULTIPLICADOR
+    return nivel
+
+
+def progresso_nivel(xp, nivel):
+    """XP ja acumulado dentro do nivel atual e quanto falta pro proximo -
+    pra barra de EXP mostrar progresso de verdade, nao só repetir o total."""
+    acumulado, limiar = 0, XP_BASE
+    for _ in range(nivel - 1):
+        acumulado += limiar
+        limiar *= XP_MULTIPLICADOR
+    return xp - acumulado, limiar
+
+
 # fatia de "total" que cada posicao do ranking leva: 1o lugar fica com
 # 40%, 2o com 30%, 3o com 15%, 4o com 10%, 5o e 6o ficam so no residual.
 # Sinal de GitHub costuma vir parelho (13,14,15...) - exagerar o VALOR
@@ -270,8 +299,7 @@ def derivar(d):
     xp_linguagens = sum(len(r.get("linguagens_bytes", [])) for r in repos) * 10
     xp = round(anos * 100 + d["commits"] * 25 + total_repos * 100 + xp_linguagens)
 
-    nivel = max(1, min(100, round(escala(total_repos, 200, teto=40) +
-                                  escala(estrelas, 5000, teto=35) + anos * 2)))
+    nivel = nivel_de_xp(xp)
     return {**d, "selados": selados, "estrelas": estrelas,
             "com_url": com_url, "total_repos": total_repos,
             "anos": anos, "lings": lings,
@@ -781,11 +809,15 @@ def montar_svg(d):
     vida_atual = vida_max
     mana_atual = mana_max
     vigor_atual = vigor_max
+    # EXP e o unico vital que mostra progresso de verdade (nao cheio
+    # como os outros 3) - faz sentido aqui porque agora existe um limiar
+    # real de XP pro proximo nivel (ver nivel_de_xp/progresso_nivel)
+    xp_no_nivel, xp_necessario = progresso_nivel(d["xp"], d["nivel"])
     vitais = [
         ("VIDA", vida_atual, vida_max, PAL_HP),
         ("MANA", mana_atual, mana_max, PAL_MP),
         ("VIGOR", vigor_atual, vigor_max, PAL_ST),
-        ("EXP", d["xp"], d["xp"] or 1, gold),
+        ("EXP", xp_no_nivel, xp_necessario, gold),
     ]
 
     v = {
