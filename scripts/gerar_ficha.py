@@ -292,14 +292,28 @@ def derivar(d):
     media_commits_repo = d["commits"] / (total_repos or 1)
 
     # XP recompensa esforco de verdade, nao popularidade: 100 por ano de
-    # estrada, 25 por commit (contribuicoes do ultimo ano), 100 por
-    # projeto erguido, e +10 por linguagem diferente DENTRO de cada
-    # projeto (um repo com 10 linguagens da 100xp so de bonus de
-    # linguagem, alem dos 100xp do projeto em si). Multiplicador x3 no
+    # estrada, 25 por commit (contribuicoes do ultimo ano, com teto - ver
+    # TETO_COMMITS_POR_PROJETO abaixo), 100 por projeto erguido, e +10 por
+    # linguagem diferente DENTRO de cada projeto (um repo com 10
+    # linguagens da 100xp so de bonus de linguagem, alem dos 100xp do
+    # projeto em si - MIN_BYTES_LINGUAGEM filtra linguagem que so
+    # apareceu de raspao, tipo 1 arquivo de config). Multiplicador x3 no
     # final pra premiar quem tem mais projetos/commits de verdade.
+    #
+    # Sem teto, 5000 commits num unico repo valeriam mais que 10 anos de
+    # carreira espalhados em 50 projetos - nao temos commit por repo
+    # individual (exigiria permissao que ja quebrou o workflow antes),
+    # entao aproximamos com total_repos x TETO_COMMITS_POR_PROJETO: quem
+    # tem poucos repos nao consegue "esconder" commit em volume infinito
+    # atras de 1 projeto so.
+    TETO_COMMITS_POR_PROJETO = 50
+    MIN_BYTES_LINGUAGEM = 500
     MULT_XP = 3
-    xp_linguagens = sum(len(r.get("linguagens_bytes", [])) for r in repos) * 10
-    xp = round((anos * 100 + d["commits"] * 25 + total_repos * 100 + xp_linguagens) * MULT_XP)
+    commits_xp = min(d["commits"], total_repos * TETO_COMMITS_POR_PROJETO)
+    xp_linguagens = sum(
+        1 for r in repos for lb in r.get("linguagens_bytes", []) if lb["bytes"] >= MIN_BYTES_LINGUAGEM
+    ) * 10
+    xp = round((anos * 100 + commits_xp * 25 + total_repos * 100 + xp_linguagens) * MULT_XP)
 
     nivel = nivel_de_xp(xp)
     return {**d, "selados": selados, "estrelas": estrelas,
