@@ -138,22 +138,30 @@ def escala(v, mx, peso=1.0, teto=20):
     return max(1, min(teto, round(curvado * teto)))
 
 
-def distribuir_pontos(pesos, total, minimo=1, exagero=3):
-    """Reparte 'total' pontos (o nivel) entre os atributos proporcional ao
-    peso de cada um. Exagera a diferenca (pesos**exagero) antes de
-    repartir - sem isso o orcamento fixo so reescala a mesma distancia
-    pequena que ja existe entre os brutos (todos ficam entre 13-17, por
-    exemplo), sem separar de verdade quem se destaca. Metodo dos restos
-    maiores (Hamilton): garante soma exata e cada atributo com pelo menos
-    'minimo' ponto, exceto quando o total nem cobre o minimo de todos."""
+# fatia de "total" que cada posicao do ranking leva: 1o lugar fica com
+# 40%, 2o com 30%, 3o com 15%, 4o com 10%, 5o e 6o ficam so no residual.
+# Sinal de GitHub costuma vir parelho (13,14,15...) - exagerar o VALOR
+# (peso**3) nao bastava pra separar; exagerar a POSICAO no ranking sim,
+# porque garante 1o/2o/3o lugar sempre bem diferentes, nao importa o
+# quao proximos os brutos estejam.
+RANKING_FATIAS = [0.40, 0.30, 0.15, 0.10, 0.01, 0.01]
+
+
+def distribuir_pontos(pesos, total, minimo=1):
+    """Reparte 'total' pontos (o nivel) entre os atributos pela posicao
+    no ranking de cada um (ver RANKING_FATIAS), nao pelo valor bruto.
+    Metodo dos restos maiores (Hamilton): garante soma exata e cada
+    atributo com pelo menos 'minimo' ponto, exceto quando o total nem
+    cobre o minimo de todos."""
     n = len(pesos)
     if total <= n * minimo:
         por_peso = sorted(pesos, key=pesos.get, reverse=True)
         return {k: (minimo if i < total else 0) for i, k in enumerate(por_peso)}
-    exagerados = {k: v ** exagero for k, v in pesos.items()}
+    ordenados = sorted(pesos, key=pesos.get, reverse=True)
+    fatias = {nome: RANKING_FATIAS[i] for i, nome in enumerate(ordenados)}
     restante = total - minimo * n
-    soma = sum(exagerados.values())
-    base = {k: minimo + (v / soma) * restante for k, v in exagerados.items()}
+    soma = sum(fatias.values())
+    base = {k: minimo + (v / soma) * restante for k, v in fatias.items()}
     pontos = {k: int(v) for k, v in base.items()}
     sobra = total - sum(pontos.values())
     fracionarios = sorted(base, key=lambda k: base[k] - pontos[k], reverse=True)
@@ -363,12 +371,16 @@ def determinar_classe(pontos_ficha, minimo=4):
     que soma ao nivel (distribuir_pontos), nao a escala crua - em nivel
     1-2 o orcamento e pequeno demais pra bater o minimo em qualquer
     atributo, e quem nao se qualifica em nenhuma classe cai em
-    Aventureiro, sem atributo associado: o "ainda nao se especializou"."""
+    Aventureiro, sem atributo associado: o "ainda nao se especializou".
+    O score do Arqueiro usa min(Destreza, Sabedoria), nao soma - soma
+    deixava a classe dual artificialmente mais forte que qualquer classe
+    de atributo unico (2o+3o lugar somados batia o 1o lugar sozinho),
+    mesmo sem o Arqueiro ser de fato o mais especializado nos dois."""
     qualificados = {}
     if pontos_ficha["Força"] >= minimo:
         qualificados["guerreiro"] = pontos_ficha["Força"]
     if pontos_ficha["Destreza"] >= minimo and pontos_ficha["Sabedoria"] >= minimo:
-        qualificados["arqueiro"] = pontos_ficha["Destreza"] + pontos_ficha["Sabedoria"]
+        qualificados["arqueiro"] = min(pontos_ficha["Destreza"], pontos_ficha["Sabedoria"])
     elif pontos_ficha["Destreza"] >= minimo:
         qualificados["ladino"] = pontos_ficha["Destreza"]
     if pontos_ficha["Inteligência"] >= minimo:
