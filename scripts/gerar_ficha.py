@@ -17,7 +17,7 @@ import sys
 import textwrap
 from datetime import datetime, timezone
 
-LOGIN = os.environ.get("FICHA_LOGIN", "chkawan")
+LOGIN = os.environ.get("FICHA_LOGIN")
 TOKEN = os.environ.get("GH_TOKEN", "")
 README = os.path.join(os.path.dirname(__file__), "..", "README.md")
 ICONES_DIR = os.path.join(os.path.dirname(__file__), "..", "ficha", "icones")
@@ -828,6 +828,8 @@ def main():
         from previa import PREVIA
         dados = PREVIA
     else:
+        if not LOGIN:
+            raise SystemExit("defina a variavel de ambiente FICHA_LOGIN com o usuario do GitHub")
         dados = buscar(LOGIN)
     with open(README, encoding="utf-8") as f:
         antigo = f.read()
