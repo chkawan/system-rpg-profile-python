@@ -146,29 +146,18 @@ def escala(v, mx, peso=1.0, teto=20):
 # quao proximos os brutos estejam.
 RANKING_FATIAS = [0.40, 0.30, 0.15, 0.10, 0.01, 0.01]
 
-# os 4 atributos que sao requisito de alguma classe (ver determinar_classe)
-# sempre disputam as 4 primeiras fatias (40/30/15/10%); Constituicao e
-# Carisma, que nao decidem classe nenhuma, ficam travados nas 2 ultimas
-# (1%/1%) mesmo que o valor bruto deles seja o maior de todos - senao um
-# atributo que nao favorece nenhuma classe podia tomar 40% do orcamento
-# de proposito nenhum.
-ATRIBUTOS_REQUISITO = ["Força", "Destreza", "Inteligência", "Sabedoria"]
-
 
 def distribuir_pontos(pesos, total, minimo=1):
     """Reparte 'total' pontos (o nivel) entre os atributos pela posicao
-    no ranking de cada um (ver RANKING_FATIAS), nao pelo valor bruto - mas
-    o ranking e feito separado por grupo (requisito de classe vs flavor,
-    ver ATRIBUTOS_REQUISITO), nao global. Metodo dos restos maiores
-    (Hamilton): garante soma exata e cada atributo com pelo menos
-    'minimo' ponto, exceto quando o total nem cobre o minimo de todos."""
+    no ranking de cada um (ver RANKING_FATIAS), nao pelo valor bruto.
+    Metodo dos restos maiores (Hamilton): garante soma exata e cada
+    atributo com pelo menos 'minimo' ponto, exceto quando o total nem
+    cobre o minimo de todos."""
     n = len(pesos)
     if total <= n * minimo:
         por_peso = sorted(pesos, key=pesos.get, reverse=True)
         return {k: (minimo if i < total else 0) for i, k in enumerate(por_peso)}
-    requisito = sorted((k for k in pesos if k in ATRIBUTOS_REQUISITO), key=pesos.get, reverse=True)
-    flavor = sorted((k for k in pesos if k not in ATRIBUTOS_REQUISITO), key=pesos.get, reverse=True)
-    ordenados = requisito + flavor
+    ordenados = sorted(pesos, key=pesos.get, reverse=True)
     fatias = {nome: RANKING_FATIAS[i] for i, nome in enumerate(ordenados)}
     restante = total - minimo * n
     soma = sum(fatias.values())
