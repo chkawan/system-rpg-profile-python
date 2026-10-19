@@ -274,32 +274,34 @@ CLASSE_TITULOS = {
 }
 
 
-# vida/mana/vigor por classe, no molde do projeto "The Tower"
-# (eldrin/characters/classes.py): base + crescimento por nivel, e o
-# recurso principal (mana ou vigor) alimentado pelo atributo que aquela
-# classe usa de verdade. o recurso que a classe nao usa de vocacao fica
-# numa trilha secundaria (SEC_BASE/SEC_POR_NIVEL), so pra nao ficar zerado.
+# vida/vigor/mana por classe, no molde do projeto "The Tower"
+# (eldrin/characters/classes.py): base + crescimento por nivel, mais o
+# atributo que alimenta aquele vital especifico vezes 2. Diferente do
+# Tower (que usa a mesma base/crescimento de recurso pra todas as 6
+# classes), aqui cada classe tem sua propria tabela nos 3 vitais - guerreiro
+# tanque de vigor com mana simbolica, mago fragil estourando de mana,
+# cada arquetipo com a cara dele em vez de todo mundo convergir pro mesmo
+# numero.
 CLASSE_VITAIS = {
-    "guerreiro":   dict(vida_base=10, vida_por_nivel=6, principal="vigor",
-                         princ_base=10, princ_por_nivel=4, princ_attr="Força",
-                         sec_attr="Inteligência"),
-    "arqueiro":    dict(vida_base=8, vida_por_nivel=5, principal="vigor",
-                         princ_base=10, princ_por_nivel=4, princ_attr="Destreza",
-                         sec_attr="Inteligência"),
-    "ladino":      dict(vida_base=8, vida_por_nivel=5, principal="vigor",
-                         princ_base=10, princ_por_nivel=4, princ_attr="Destreza",
-                         sec_attr="Inteligência"),
-    "aventureiro": dict(vida_base=10, vida_por_nivel=6, principal="vigor",
-                         princ_base=10, princ_por_nivel=4, princ_attr="Constituição",
-                         sec_attr="Inteligência"),
-    "mago":        dict(vida_base=6, vida_por_nivel=4, principal="mana",
-                         princ_base=10, princ_por_nivel=4, princ_attr="Inteligência",
-                         sec_attr="Força"),
-    "curandeiro":  dict(vida_base=8, vida_por_nivel=5, principal="mana",
-                         princ_base=10, princ_por_nivel=4, princ_attr="Sabedoria",
-                         sec_attr="Força"),
+    "guerreiro":   dict(vida_base=12, vida_por_nivel=7,
+                         vigor_base=14, vigor_por_nivel=6, vigor_attr="Força",
+                         mana_base=4, mana_por_nivel=1, mana_attr="Inteligência"),
+    "arqueiro":    dict(vida_base=9, vida_por_nivel=5,
+                         vigor_base=12, vigor_por_nivel=5, vigor_attr="Destreza",
+                         mana_base=4, mana_por_nivel=1, mana_attr="Inteligência"),
+    "ladino":      dict(vida_base=8, vida_por_nivel=4,
+                         vigor_base=11, vigor_por_nivel=5, vigor_attr="Destreza",
+                         mana_base=5, mana_por_nivel=1, mana_attr="Inteligência"),
+    "aventureiro": dict(vida_base=13, vida_por_nivel=7,
+                         vigor_base=10, vigor_por_nivel=4, vigor_attr="Constituição",
+                         mana_base=5, mana_por_nivel=1, mana_attr="Inteligência"),
+    "mago":        dict(vida_base=5, vida_por_nivel=3,
+                         vigor_base=4, vigor_por_nivel=1, vigor_attr="Força",
+                         mana_base=13, mana_por_nivel=6, mana_attr="Inteligência"),
+    "curandeiro":  dict(vida_base=8, vida_por_nivel=5,
+                         vigor_base=5, vigor_por_nivel=2, vigor_attr="Força",
+                         mana_base=12, mana_por_nivel=5, mana_attr="Sabedoria"),
 }
-SEC_BASE, SEC_POR_NIVEL = 5, 2
 
 
 def determinar_classe(pontos):
@@ -645,21 +647,17 @@ def montar_svg(d):
     icone_classe = img_icone(arquivo_classe, 64)
     icone_classe_fundo = img_icone(arquivo_classe, 170)
 
-    # vida/mana/vigor no molde classico de RPG, igual ao projeto "The
+    # vida/vigor/mana no molde classico de RPG, igual ao projeto "The
     # Tower" (eldrin/characters/classes.py + character.py): base +
-    # crescimento por nivel, e o recurso principal (mana ou vigor,
-    # dependendo da classe) alimentado pelo atributo que a classe usa de
-    # verdade - o outro recurso fica numa trilha secundaria, mais modesta.
-    # O preenchimento atual usa um sinal recente relacionado, sempre
-    # limitado a esse teto.
+    # crescimento por nivel, mais o atributo que alimenta aquele vital
+    # vezes 2. Cada classe tem sua propria tabela nos 3 vitais (ver
+    # CLASSE_VITAIS), entao guerreiro e mago nao convergem pro mesmo
+    # numero so porque tem o mesmo nivel. O preenchimento atual usa um
+    # sinal recente relacionado, sempre limitado a esse teto.
     cfg = CLASSE_VITAIS[classe_chave]
     vida_max = cfg["vida_base"] + cfg["vida_por_nivel"] * (d["nivel"] - 1) + pontos["Constituição"] * 2
-    principal_max = cfg["princ_base"] + cfg["princ_por_nivel"] * (d["nivel"] - 1) + pontos[cfg["princ_attr"]] * 2
-    secundario_max = SEC_BASE + SEC_POR_NIVEL * (d["nivel"] - 1) + pontos[cfg["sec_attr"]] * 2
-    if cfg["principal"] == "vigor":
-        vigor_max, mana_max = principal_max, secundario_max
-    else:
-        mana_max, vigor_max = principal_max, secundario_max
+    vigor_max = cfg["vigor_base"] + cfg["vigor_por_nivel"] * (d["nivel"] - 1) + pontos[cfg["vigor_attr"]] * 2
+    mana_max = cfg["mana_base"] + cfg["mana_por_nivel"] * (d["nivel"] - 1) + pontos[cfg["mana_attr"]] * 2
     vida_atual = min(vida_max, 40 + d["recentes"] * 15)
     mana_atual = min(mana_max, 30 + d["estrelas"] * 3)
     vigor_atual = min(vigor_max, d["commits"])
