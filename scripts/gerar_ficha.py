@@ -307,11 +307,13 @@ CLASSE_VITAIS = {
 def determinar_classe(pontos):
     """Força -> Guerreiro, Destreza -> Arqueiro, Constituição ->
     Aventureiro, Inteligência -> Mago, Sabedoria -> Curandeiro,
-    Carisma -> Ladino: a classe vem so do atributo que mais se destaca."""
+    Carisma -> Ladino: a classe vem so do atributo que mais se destaca.
+    Em empate, max() pega o primeiro na ordem abaixo - Aventureiro vem
+    primeiro de proposito, antes ate de Guerreiro."""
     candidatos = {
+        "aventureiro": pontos["Constituição"],
         "guerreiro": pontos["Força"],
         "arqueiro": pontos["Destreza"],
-        "aventureiro": pontos["Constituição"],
         "mago": pontos["Inteligência"],
         "curandeiro": pontos["Sabedoria"],
         "ladino": pontos["Carisma"],
