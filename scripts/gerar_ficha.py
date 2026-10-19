@@ -129,7 +129,7 @@ def buscar(login):
     }
 
 
-def escala(v, mx, peso=1.0, teto=20):
+def escala(v, mx, peso=1.0, teto=30):
     """peso>1: curva generosa (sobe rapido) pro atributo que pesa mais na
     carreira dev. peso<1: curva exigente (precisa de muito mais input pro
     mesmo valor) pro atributo que e sinal fraco e facil de inflar."""
@@ -147,26 +147,42 @@ def escala(v, mx, peso=1.0, teto=20):
 RANKING_FATIAS = [0.40, 0.30, 0.15, 0.10, 0.01, 0.01]
 
 
-def distribuir_pontos(pesos, total, minimo=1):
-    """Reparte 'total' pontos (o nivel) entre os atributos pela posicao
-    no ranking de cada um (ver RANKING_FATIAS), nao pelo valor bruto.
-    Metodo dos restos maiores (Hamilton): garante soma exata e cada
-    atributo com pelo menos 'minimo' ponto, exceto quando o total nem
-    cobre o minimo de todos."""
+def distribuir_pontos(pesos, total, minimo=1, maximo=30):
+    """Reparte 'total' pontos (o nivel, max 100) entre os atributos pela
+    posicao no ranking de cada um (ver RANKING_FATIAS), nao pelo valor
+    bruto. Nenhum atributo passa de 'maximo' (30, o mesmo teto da escala
+    crua) mesmo que a fatia desse ranking desse mais que isso em nivel
+    alto (40% de 100 = 40) - quem estoura o teto fica preso em 'maximo' e
+    o excedente e repartido de novo so entre quem ainda nao estourou.
+    Metodo dos restos maiores (Hamilton) fecha a soma exata no final."""
     n = len(pesos)
     if total <= n * minimo:
         por_peso = sorted(pesos, key=pesos.get, reverse=True)
         return {k: (minimo if i < total else 0) for i, k in enumerate(por_peso)}
     ordenados = sorted(pesos, key=pesos.get, reverse=True)
     fatias = {nome: RANKING_FATIAS[i] for i, nome in enumerate(ordenados)}
-    restante = total - minimo * n
-    soma = sum(fatias.values())
-    base = {k: minimo + (v / soma) * restante for k, v in fatias.items()}
-    pontos = {k: int(v) for k, v in base.items()}
-    sobra = total - sum(pontos.values())
-    fracionarios = sorted(base, key=lambda k: base[k] - pontos[k], reverse=True)
-    for k in fracionarios[:sobra]:
-        pontos[k] += 1
+
+    pontos = {k: minimo for k in pesos}
+    pendente = total - minimo * n
+    livres = set(pesos)
+    while pendente > 0 and livres:
+        soma_livres = sum(fatias[k] for k in livres)
+        base = {k: pontos[k] + (fatias[k] / soma_livres) * pendente for k in livres}
+        estourou = {k for k in livres if base[k] > maximo}
+        if not estourou:
+            inteiros = {k: int(base[k]) for k in livres}
+            sobra = pendente - sum(inteiros[k] - pontos[k] for k in livres)
+            fracionarios = sorted(livres, key=lambda k: base[k] - inteiros[k], reverse=True)
+            for k in fracionarios[:sobra]:
+                inteiros[k] += 1
+            for k in livres:
+                pontos[k] = inteiros[k]
+            pendente = 0
+        else:
+            for k in estourou:
+                pendente -= maximo - pontos[k]
+                pontos[k] = maximo
+                livres.discard(k)
     return pontos
 
 
@@ -241,8 +257,8 @@ def derivar(d):
     # contribuicoes do ano dividido pelo total de repositorios.
     media_commits_repo = d["commits"] / (total_repos or 1)
 
-    nivel = max(1, min(99, round(escala(total_repos, 200, teto=40) +
-                                 escala(estrelas, 5000, teto=35) + anos * 2)))
+    nivel = max(1, min(100, round(escala(total_repos, 200, teto=40) +
+                                  escala(estrelas, 5000, teto=35) + anos * 2)))
     return {**d, "selados": selados, "estrelas": estrelas,
             "com_url": com_url, "total_repos": total_repos,
             "anos": anos, "lings": lings,
