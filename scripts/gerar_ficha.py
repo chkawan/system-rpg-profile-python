@@ -138,6 +138,30 @@ def escala(v, mx, peso=1.0, teto=20):
     return max(1, min(teto, round(curvado * teto)))
 
 
+def distribuir_pontos(pesos, total, minimo=1, exagero=3):
+    """Reparte 'total' pontos (o nivel) entre os atributos proporcional ao
+    peso de cada um. Exagera a diferenca (pesos**exagero) antes de
+    repartir - sem isso o orcamento fixo so reescala a mesma distancia
+    pequena que ja existe entre os brutos (todos ficam entre 13-17, por
+    exemplo), sem separar de verdade quem se destaca. Metodo dos restos
+    maiores (Hamilton): garante soma exata e cada atributo com pelo menos
+    'minimo' ponto, exceto quando o total nem cobre o minimo de todos."""
+    n = len(pesos)
+    if total <= n * minimo:
+        por_peso = sorted(pesos, key=pesos.get, reverse=True)
+        return {k: (minimo if i < total else 0) for i, k in enumerate(por_peso)}
+    exagerados = {k: v ** exagero for k, v in pesos.items()}
+    restante = total - minimo * n
+    soma = sum(exagerados.values())
+    base = {k: minimo + (v / soma) * restante for k, v in exagerados.items()}
+    pontos = {k: int(v) for k, v in base.items()}
+    sobra = total - sum(pontos.values())
+    fracionarios = sorted(base, key=lambda k: base[k] - pontos[k], reverse=True)
+    for k in fracionarios[:sobra]:
+        pontos[k] += 1
+    return pontos
+
+
 def dias(iso):
     d = datetime.fromisoformat(iso.replace("Z", "+00:00"))
     return (datetime.now(timezone.utc) - d).days
@@ -667,6 +691,12 @@ def montar_svg(d):
     attrs = atributos(d)
     pontos = {nome: valor for nome, valor, _ in attrs}
 
+    # pontos exibidos na ficha somam exatamente o nivel (igual RPG de
+    # mesa classico: X pontos pra distribuir, voce nao inventa atributo
+    # do nada). Classe e vitais abaixo continuam na escala crua (pontos),
+    # que ja é a mesma pra qualquer nivel - so a exibicao usa o orcamento.
+    pontos_ficha = distribuir_pontos(pontos, d["nivel"])
+
     # classe vem do atributo que mais se destaca, nao da linguagem
     # principal - decidida antes dos vitais porque agora os vitais
     # dependem da classe escolhida (ver CLASSE_VITAIS)
@@ -713,7 +743,8 @@ def montar_svg(d):
         v[f"W_{tag}"] = f"{640 * pct:.0f}"
         v[f"SEG_{tag}"] = segmentos(84, y, 640, cor)
         v[f"T_{tag}"] = f"{round(atual)} / {round(mx)}"
-    for letra, (nome, valor, porque) in zip("ABCDEF", attrs):
+    for letra, (nome, _, porque) in zip("ABCDEF", attrs):
+        valor = pontos_ficha[nome]
         col = 16 if letra in "ACE" else 452
         y = {"A": 298, "B": 298, "C": 342, "D": 342, "E": 386, "F": 386}[letra]
         v[f"W_{letra}"] = str(valor * 19)
