@@ -286,13 +286,13 @@ def atributos(d):
     # teto maior + peso baixo pra 1000 seguidores nao virar nota maxima
     # sem nenhum sinal tecnico por tras.
     return [
-        ("Força", escala(d["total_repos"], 200, peso=1.0),
+        ("Força", escala(d["total_repos"], 200, peso=0.8),
          f'{d["total_repos"]} repositórios erguidos'),
-        ("Destreza", escala(d["media_commits_repo"], 20, peso=0.6),
+        ("Destreza", escala(d["media_commits_repo"], 50, peso=0.4),
          f'{d["media_commits_repo"]:.1f} commits por repositório em média'),
-        ("Constituição", escala(d["anos"], 15, peso=1.8), f'{d["anos"]:.1f} anos de estrada sem parar'),
-        ("Inteligência", escala(len(d["lings"]), 20, peso=1.4), f'{len(d["lings"])} linguagens estudadas'),
-        ("Sabedoria", escala(d["dias_ativos"], 365, peso=1.0), f'{d["dias_ativos"]} dias ativos no último ano'),
+        ("Constituição", escala(d["anos"], 15, peso=1.0), f'{d["anos"]:.1f} anos de estrada sem parar'),
+        ("Inteligência", escala(len(d["lings"]), 20, peso=1.3), f'{len(d["lings"])} linguagens estudadas'),
+        ("Sabedoria", escala(d["dias_ativos"], 365, peso=1.2), f'{d["dias_ativos"]} dias ativos no último ano'),
         ("Carisma", escala(d["seguidores"], 6000, peso=0.3), f'{d["seguidores"]} seguidores no reino'),
     ]
 
