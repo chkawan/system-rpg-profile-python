@@ -88,18 +88,19 @@ Isso sobrescreve `ficha/ficha.svg` e atualiza o carimbo de data no
 
 O workflow (`.github/workflows/ficha.yml`) já existe e roda sozinho todo dia
 às 6h UTC, a cada push que toque em `scripts/gerar_ficha.py`, ou manualmente.
-Ele só precisa de duas configurações no repositório, em **Settings → Secrets
-and variables → Actions**:
+Ele precisa de uma configuração no repositório, em **Settings → Secrets and
+variables → Actions → aba Secrets** → *New repository secret* → nome
+`FICHA_TOKEN`, valor o token do passo 5.
 
-- Aba **Secrets** → *New repository secret* → nome `FICHA_TOKEN`, valor o
-  token do passo 5. (É secret, não variable, porque é sensível.)
-- Aba **Variables** → *New repository variable* → nome `FICHA_LOGIN`, valor
-  seu usuário do GitHub. (É variable, não secret, porque não é sensível —
-  só o nome do seu próprio usuário.)
+O usuário do GitHub (`FICHA_LOGIN`) já vem direto no `env:` do workflow
+(`FICHA_LOGIN: chkawan`) — se for usar este repo pra outro perfil, edite
+essa linha em `.github/workflows/ficha.yml` em vez de criar uma variável
+separada (uma variável de repositório funcionaria também, via
+`${{ vars.FICHA_LOGIN }}`, mas sem o job declarar `environment:` é fácil
+confundir a aba Secrets com a aba Variables e ela não ser enxergada - direto
+no YAML é mais simples e não depende de configuração externa).
 
-Sem essas duas, o workflow falha: sem o secret, a API recusa a chamada; sem
-a variable, o script para sozinho com o erro "defina a variável de ambiente
-FICHA_LOGIN...".
+Sem o secret, o workflow falha porque a API recusa a chamada.
 
 ## 8. Dar push e conferir
 
