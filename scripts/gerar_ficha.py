@@ -55,13 +55,26 @@ query($login: String!) {
   user(login: $login) {
     name login createdAt location
     followers { totalCount }
-    contributionsCollection { contributionCalendar { totalContributions } }
+    contributionsCollection {
+      contributionCalendar {
+        totalContributions
+        weeks { contributionDays { contributionCount } }
+      }
+    }
     repositories(first: 100, ownerAffiliations: OWNER, isFork: false,
                  orderBy: {field: PUSHED_AT, direction: DESC}) {
       totalCount
       nodes {
         name pushedAt isPrivate stargazerCount homepageUrl description
         primaryLanguage { name }
+        languages(first: 10, orderBy: {field: SIZE, direction: DESC}) {
+          edges { size node { name } }
+        }
+        defaultBranchRef {
+          target {
+            ... on Commit { history { totalCount } }
+          }
+        }
       }
     }
     pinnedItems(first: 6, types: REPOSITORY) {
@@ -95,19 +108,30 @@ def buscar(login):
             + dados.get("message", str(dados))
         )
     u = dados["data"]["user"]
+    calendario = u["contributionsCollection"]["contributionCalendar"]
+    dias_contrib = [dia["contributionCount"]
+                     for semana in calendario["weeks"] for dia in semana["contributionDays"]]
     return {
         "nome": u["name"] or u["login"],
         "login": u["login"],
         "criado": u["createdAt"],
         "local": u.get("location") or "",
         "seguidores": u["followers"]["totalCount"],
-        "commits": u["contributionsCollection"]["contributionCalendar"]["totalContributions"],
+        "commits": calendario["totalContributions"],
+        "dias_ativos": sum(1 for c in dias_contrib if c > 0),
         "repos_total": u["repositories"]["totalCount"],
         "repos": [{
             "nome": r["name"], "push": r["pushedAt"], "privado": r["isPrivate"],
             "estrelas": r["stargazerCount"], "tem_url": bool(r["homepageUrl"]),
             "descricao": r["description"],
             "ling": (r["primaryLanguage"] or {}).get("name"),
+            "linguagens_bytes": [
+                {"nome": e["node"]["name"], "bytes": e["size"]} for e in r["languages"]["edges"]
+            ],
+            "commits_repo": (
+                ((r.get("defaultBranchRef") or {}).get("target") or {})
+                .get("history", {}).get("totalCount", 0)
+            ),
         } for r in u["repositories"]["nodes"]],
         "pinned": [{
             "nome": r["name"], "estrelas": r["stargazerCount"],
@@ -177,19 +201,28 @@ def derivar(d):
     recentes = sum(1 for r in repos if dias(r["push"]) < 90)
     missoes = selecionar_missoes(repos, d["login"])
 
-    contagem = {}
+    # linguagem por bytes de codigo, nao mais por "tocou uma vez": um
+    # arquivo isolado de outra linguagem num repo nao conta como skill.
+    # MIN_BYTES filtra esse ruido antes de entrar na lista (usada tanto
+    # nas barras de Habilidades quanto na contagem de Inteligencia).
+    MIN_BYTES = 500
+    bytes_por_lingua = {}
     for r in repos:
-        if r["ling"]:
-            contagem[r["ling"]] = contagem.get(r["ling"], 0) + 1
-    total = sum(contagem.values()) or 1
-    lings = sorted(({"nome": k, "n": v, "fatia": v / total} for k, v in contagem.items()),
-                   key=lambda x: -x["n"])
+        for lb in r.get("linguagens_bytes", []):
+            bytes_por_lingua[lb["nome"]] = bytes_por_lingua.get(lb["nome"], 0) + lb["bytes"]
+    bytes_por_lingua = {k: v for k, v in bytes_por_lingua.items() if v >= MIN_BYTES}
+    total_bytes = sum(bytes_por_lingua.values()) or 1
+    lings = sorted(({"nome": k, "bytes": v, "fatia": v / total_bytes} for k, v in bytes_por_lingua.items()),
+                   key=lambda x: -x["bytes"])
+
+    media_commits_repo = sum(r.get("commits_repo", 0) for r in repos) / (len(repos) or 1)
 
     nivel = max(1, min(99, round(escala(total_repos, 200, teto=40) +
                                  escala(estrelas, 5000, teto=35) + anos * 2)))
     return {**d, "selados": selados, "estrelas": estrelas,
             "com_url": com_url, "total_repos": total_repos,
             "anos": anos, "recentes": recentes, "lings": lings,
+            "media_commits_repo": media_commits_repo,
             "missoes": missoes, "nivel": nivel,
             "pinned": d.get("pinned", [])[:5]}
 
@@ -197,29 +230,28 @@ def derivar(d):
 def atributos(d):
     # cada atributo fisico/mental do RPG mapeado pro sinal de programacao
     # mais parecido com o que ele mede na mesa: forca e musculo (volume
-    # erguido), destreza e reflexo (velocidade de reacao), constituicao e
-    # folego (tempo aguentando o ritmo), inteligencia e estudo (repertorio
-    # de linguagens), sabedoria e disciplina/forca de vontade (constancia
-    # de commits) e carisma e presenca social (quem te segue).
+    # erguido), destreza e reflexo (velocidade de reacao, aqui medida por
+    # comprometimento por repo - repo que so leva 1 commit e abandonado
+    # nao conta), constituicao e folego (tempo aguentando o ritmo),
+    # inteligencia e estudo (repertorio de linguagens - por bytes reais de
+    # codigo, nao so por ter tocado uma vez), sabedoria e disciplina/forca
+    # de vontade (dias ativos no calendario, nao total de commits - commit
+    # e alta frequencia e infla facil, aparecer com regularidade e o sinal
+    # de disciplina de verdade) e carisma e presenca social (quem te segue).
     # peso de cada um = o quanto ele pesa de verdade numa carreira dev. Um
-    # peso de 0.5-1.6 nao bastava: os brutos (antes do peso) de repos,
-    # anos, linguagens e commits ficam todos entre 0.6-0.75 (o log
-    # comprime demais), entao so um peso bem mais extremo nas pontas
-    # (0.3 a 1.8) separa de verdade - e so isso nao resolvia a Sabedoria
-    # (o teto de 3000 commits/ano e baixo demais, commit trivial infla
-    # fácil), por isso o teto dela tambem subiu pra 5000. Commit e um
-    # sinal de alta frequencia (cada commit trivial conta), entao o peso
-    # fica igual ao da Força (baseline) em vez de ser o mais generoso.
-    # Carisma ganhou o mesmo tratamento de teto maior + peso baixo pra
-    # 1000 seguidores nao virar nota maxima sem nenhum sinal tecnico por
-    # tras.
+    # peso de 0.5-1.6 nao bastava: os brutos (antes do peso) ficam todos
+    # entre 0.6-0.75 (o log comprime demais), entao so um peso bem mais
+    # extremo nas pontas (0.3 a 1.8) separa de verdade. Carisma ganhou
+    # teto maior + peso baixo pra 1000 seguidores nao virar nota maxima
+    # sem nenhum sinal tecnico por tras.
     return [
         ("Força", escala(d["total_repos"], 200, peso=1.0),
          f'{d["total_repos"]} repositórios erguidos'),
-        ("Destreza", escala(d["recentes"], 50, peso=0.6), f'{d["recentes"]} repositórios com push recente'),
+        ("Destreza", escala(d["media_commits_repo"], 40, peso=0.6),
+         f'{d["media_commits_repo"]:.1f} commits por repositório em média'),
         ("Constituição", escala(d["anos"], 15, peso=1.8), f'{d["anos"]:.1f} anos de estrada sem parar'),
         ("Inteligência", escala(len(d["lings"]), 20, peso=1.4), f'{len(d["lings"])} linguagens estudadas'),
-        ("Sabedoria", escala(d["commits"], 5000, peso=1.0), f'{d["commits"]} commits de disciplina no ano'),
+        ("Sabedoria", escala(d["dias_ativos"], 365, peso=1.0), f'{d["dias_ativos"]} dias ativos no último ano'),
         ("Carisma", escala(d["seguidores"], 6000, peso=0.3), f'{d["seguidores"]} seguidores no reino'),
     ]
 
