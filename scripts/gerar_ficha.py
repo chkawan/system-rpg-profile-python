@@ -70,11 +70,6 @@ query($login: String!) {
         languages(first: 10, orderBy: {field: SIZE, direction: DESC}) {
           edges { size node { name } }
         }
-        defaultBranchRef {
-          target {
-            ... on Commit { history { totalCount } }
-          }
-        }
       }
     }
     pinnedItems(first: 6, types: REPOSITORY) {
@@ -128,10 +123,6 @@ def buscar(login):
             "linguagens_bytes": [
                 {"nome": e["node"]["name"], "bytes": e["size"]} for e in r["languages"]["edges"]
             ],
-            "commits_repo": (
-                ((r.get("defaultBranchRef") or {}).get("target") or {})
-                .get("history", {}).get("totalCount", 0)
-            ),
         } for r in u["repositories"]["nodes"]],
         "pinned": [{
             "nome": r["name"], "estrelas": r["stargazerCount"],
@@ -215,7 +206,12 @@ def derivar(d):
     lings = sorted(({"nome": k, "bytes": v, "fatia": v / total_bytes} for k, v in bytes_por_lingua.items()),
                    key=lambda x: -x["bytes"])
 
-    media_commits_repo = sum(r.get("commits_repo", 0) for r in repos) / (len(repos) or 1)
+    # media de contribuicoes por repo que voce mantem - nao e o commit
+    # daquele repo especifico (isso exigiria permissao de leitura de
+    # conteudo do token, que o FICHA_TOKEN nao tem - foi o que quebrou o
+    # workflow), mas usa dados que a API ja entrega de graca: total de
+    # contribuicoes do ano dividido pelo total de repositorios.
+    media_commits_repo = d["commits"] / (total_repos or 1)
 
     nivel = max(1, min(99, round(escala(total_repos, 200, teto=40) +
                                  escala(estrelas, 5000, teto=35) + anos * 2)))
@@ -231,8 +227,9 @@ def atributos(d):
     # cada atributo fisico/mental do RPG mapeado pro sinal de programacao
     # mais parecido com o que ele mede na mesa: forca e musculo (volume
     # erguido), destreza e reflexo (velocidade de reacao, aqui medida por
-    # comprometimento por repo - repo que so leva 1 commit e abandonado
-    # nao conta), constituicao e folego (tempo aguentando o ritmo),
+    # quanto voce contribui em media por repositorio que mantem - repo
+    # criado e abandonado puxa a media pra baixo), constituicao e folego
+    # (tempo aguentando o ritmo),
     # inteligencia e estudo (repertorio de linguagens - por bytes reais de
     # codigo, nao so por ter tocado uma vez), sabedoria e disciplina/forca
     # de vontade (dias ativos no calendario, nao total de commits - commit
@@ -247,7 +244,7 @@ def atributos(d):
     return [
         ("Força", escala(d["total_repos"], 200, peso=1.0),
          f'{d["total_repos"]} repositórios erguidos'),
-        ("Destreza", escala(d["media_commits_repo"], 40, peso=0.6),
+        ("Destreza", escala(d["media_commits_repo"], 20, peso=0.6),
          f'{d["media_commits_repo"]:.1f} commits por repositório em média'),
         ("Constituição", escala(d["anos"], 15, peso=1.8), f'{d["anos"]:.1f} anos de estrada sem parar'),
         ("Inteligência", escala(len(d["lings"]), 20, peso=1.4), f'{len(d["lings"])} linguagens estudadas'),
