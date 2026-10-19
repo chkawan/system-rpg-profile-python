@@ -135,10 +135,17 @@ def buscar(login):
     }
 
 
-def escala(v, mx, peso=1.0, teto=30):
+def escala(v, mx, peso=1.0, teto=100):
     """peso>1: curva generosa (sobe rapido) pro atributo que pesa mais na
     carreira dev. peso<1: curva exigente (precisa de muito mais input pro
-    mesmo valor) pro atributo que e sinal fraco e facil de inflar."""
+    mesmo valor) pro atributo que e sinal fraco e facil de inflar.
+
+    teto=100 e so escala de exibicao (0-100%, bater o mx de um atributo
+    sempre da 100, nao importa o peso - e matematico: log10(mx+1)/
+    log10(mx+1) = 1 sempre). Formula antiga usava teto=30; quem depende
+    do valor bruto do atributo (CLASSE_VITAIS, vida/vigor/mana) corrige o
+    multiplicador na mesma proporcao (30/100 = 0.6 em vez de 2) pra nao
+    inflar o resultado so por causa da troca de escala."""
     bruto = math.log10(v + 1) / math.log10(mx + 1)
     curvado = bruto ** (1 / peso)
     return max(1, min(teto, round(curvado * teto)))
@@ -822,9 +829,11 @@ def montar_svg(d):
     # retrata o personagem em pleno vigor (full), nao um estado de
     # "gastou X de Y" no meio de uma missao.
     cfg = CLASSE_VITAIS[classe_chave]
-    vida_max = cfg["vida_base"] + cfg["vida_por_nivel"] * (d["nivel"] - 1) + pontos["Constituição"] * 2
-    vigor_max = cfg["vigor_base"] + cfg["vigor_por_nivel"] * (d["nivel"] - 1) + pontos[cfg["vigor_attr"]] * 2
-    mana_max = cfg["mana_base"] + cfg["mana_por_nivel"] * (d["nivel"] - 1) + pontos[cfg["mana_attr"]] * 2
+    # atributo bruto agora e escala 0-100 (era 0-30) - 0.6 em vez do 2
+    # antigo mantem a mesma contribuicao maxima de antes (30*2 = 100*0.6)
+    vida_max = cfg["vida_base"] + cfg["vida_por_nivel"] * (d["nivel"] - 1) + pontos["Constituição"] * 0.6
+    vigor_max = cfg["vigor_base"] + cfg["vigor_por_nivel"] * (d["nivel"] - 1) + pontos[cfg["vigor_attr"]] * 0.6
+    mana_max = cfg["mana_base"] + cfg["mana_por_nivel"] * (d["nivel"] - 1) + pontos[cfg["mana_attr"]] * 0.6
     vida_atual = vida_max
     mana_atual = mana_max
     vigor_atual = vigor_max
