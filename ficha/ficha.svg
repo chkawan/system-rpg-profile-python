@@ -6,11 +6,11 @@
     <clipPath id="cMana"><rect x="84" y="160" width="640" height="14"/></clipPath>
     <clipPath id="cVigor"><rect x="84" y="184" width="640" height="14"/></clipPath>
     <clipPath id="cExp"><rect x="84" y="208" width="282" height="14"/></clipPath>
-    <clipPath id="pA"><rect x="16" y="298" width="95" height="10"/></clipPath>
+    <clipPath id="pA"><rect x="16" y="298" width="19" height="10"/></clipPath>
     <clipPath id="pB"><rect x="452" y="298" width="323" height="10"/></clipPath>
-    <clipPath id="pC"><rect x="16" y="342" width="19" height="10"/></clipPath>
-    <clipPath id="pD"><rect x="452" y="342" width="247" height="10"/></clipPath>
-    <clipPath id="pE"><rect x="16" y="386" width="133" height="10"/></clipPath>
+    <clipPath id="pC"><rect x="16" y="342" width="247" height="10"/></clipPath>
+    <clipPath id="pD"><rect x="452" y="342" width="133" height="10"/></clipPath>
+    <clipPath id="pE"><rect x="16" y="386" width="95" height="10"/></clipPath>
     <clipPath id="pF"><rect x="452" y="386" width="19" height="10"/></clipPath>
     <pattern id="scan" width="4" height="4" patternUnits="userSpaceOnUse">
       <rect width="4" height="1" fill="#000" opacity="0.2"/>
@@ -68,7 +68,7 @@
   <rect x="16" y="298" width="380" height="10" fill="#07050a"/>
   <g clip-path="url(#pA)"><rect x="16" y="298" width="15" height="10" fill="#855aed"/><rect x="35" y="298" width="15" height="10" fill="#855aed"/><rect x="54" y="298" width="15" height="10" fill="#855aed"/><rect x="73" y="298" width="15" height="10" fill="#855aed"/><rect x="92" y="298" width="15" height="10" fill="#855aed"/><rect x="111" y="298" width="15" height="10" fill="#855aed"/><rect x="130" y="298" width="15" height="10" fill="#855aed"/><rect x="149" y="298" width="15" height="10" fill="#855aed"/><rect x="168" y="298" width="15" height="10" fill="#855aed"/><rect x="187" y="298" width="15" height="10" fill="#855aed"/><rect x="206" y="298" width="15" height="10" fill="#855aed"/><rect x="225" y="298" width="15" height="10" fill="#855aed"/><rect x="244" y="298" width="15" height="10" fill="#855aed"/><rect x="263" y="298" width="15" height="10" fill="#855aed"/><rect x="282" y="298" width="15" height="10" fill="#855aed"/><rect x="301" y="298" width="15" height="10" fill="#855aed"/><rect x="320" y="298" width="15" height="10" fill="#855aed"/><rect x="339" y="298" width="15" height="10" fill="#855aed"/><rect x="358" y="298" width="15" height="10" fill="#855aed"/><rect x="377" y="298" width="15" height="10" fill="#855aed"/></g>
   <text x="16" y="290" font-size="13" fill="#e6d3a3">Força</text>
-  <text x="396" y="290" font-size="14" font-weight="bold" text-anchor="end" fill="#855aed">5</text>
+  <text x="396" y="290" font-size="14" font-weight="bold" text-anchor="end" fill="#855aed">1</text>
   <text x="16" y="322" font-size="10.5" fill="#8a7c62">29 repositórios erguidos</text>
 
   <rect x="452" y="298" width="380" height="10" fill="#07050a"/>
@@ -80,19 +80,19 @@
   <rect x="16" y="342" width="380" height="10" fill="#07050a"/>
   <g clip-path="url(#pC)"><rect x="16" y="342" width="15" height="10" fill="#855aed"/><rect x="35" y="342" width="15" height="10" fill="#855aed"/><rect x="54" y="342" width="15" height="10" fill="#855aed"/><rect x="73" y="342" width="15" height="10" fill="#855aed"/><rect x="92" y="342" width="15" height="10" fill="#855aed"/><rect x="111" y="342" width="15" height="10" fill="#855aed"/><rect x="130" y="342" width="15" height="10" fill="#855aed"/><rect x="149" y="342" width="15" height="10" fill="#855aed"/><rect x="168" y="342" width="15" height="10" fill="#855aed"/><rect x="187" y="342" width="15" height="10" fill="#855aed"/><rect x="206" y="342" width="15" height="10" fill="#855aed"/><rect x="225" y="342" width="15" height="10" fill="#855aed"/><rect x="244" y="342" width="15" height="10" fill="#855aed"/><rect x="263" y="342" width="15" height="10" fill="#855aed"/><rect x="282" y="342" width="15" height="10" fill="#855aed"/><rect x="301" y="342" width="15" height="10" fill="#855aed"/><rect x="320" y="342" width="15" height="10" fill="#855aed"/><rect x="339" y="342" width="15" height="10" fill="#855aed"/><rect x="358" y="342" width="15" height="10" fill="#855aed"/><rect x="377" y="342" width="15" height="10" fill="#855aed"/></g>
   <text x="16" y="334" font-size="13" fill="#e6d3a3">Constituição</text>
-  <text x="396" y="334" font-size="14" font-weight="bold" text-anchor="end" fill="#855aed">1</text>
+  <text x="396" y="334" font-size="14" font-weight="bold" text-anchor="end" fill="#855aed">13</text>
   <text x="16" y="366" font-size="10.5" fill="#8a7c62">4.7 anos de estrada sem parar</text>
 
   <rect x="452" y="342" width="380" height="10" fill="#07050a"/>
   <g clip-path="url(#pD)"><rect x="452" y="342" width="15" height="10" fill="#855aed"/><rect x="471" y="342" width="15" height="10" fill="#855aed"/><rect x="490" y="342" width="15" height="10" fill="#855aed"/><rect x="509" y="342" width="15" height="10" fill="#855aed"/><rect x="528" y="342" width="15" height="10" fill="#855aed"/><rect x="547" y="342" width="15" height="10" fill="#855aed"/><rect x="566" y="342" width="15" height="10" fill="#855aed"/><rect x="585" y="342" width="15" height="10" fill="#855aed"/><rect x="604" y="342" width="15" height="10" fill="#855aed"/><rect x="623" y="342" width="15" height="10" fill="#855aed"/><rect x="642" y="342" width="15" height="10" fill="#855aed"/><rect x="661" y="342" width="15" height="10" fill="#855aed"/><rect x="680" y="342" width="15" height="10" fill="#855aed"/><rect x="699" y="342" width="15" height="10" fill="#855aed"/><rect x="718" y="342" width="15" height="10" fill="#855aed"/><rect x="737" y="342" width="15" height="10" fill="#855aed"/><rect x="756" y="342" width="15" height="10" fill="#855aed"/><rect x="775" y="342" width="15" height="10" fill="#855aed"/><rect x="794" y="342" width="15" height="10" fill="#855aed"/><rect x="813" y="342" width="15" height="10" fill="#855aed"/></g>
   <text x="452" y="334" font-size="13" fill="#e6d3a3">Inteligência</text>
-  <text x="832" y="334" font-size="14" font-weight="bold" text-anchor="end" fill="#855aed">13</text>
+  <text x="832" y="334" font-size="14" font-weight="bold" text-anchor="end" fill="#855aed">7</text>
   <text x="452" y="366" font-size="10.5" fill="#8a7c62">6 linguagens estudadas</text>
 
   <rect x="16" y="386" width="380" height="10" fill="#07050a"/>
   <g clip-path="url(#pE)"><rect x="16" y="386" width="15" height="10" fill="#855aed"/><rect x="35" y="386" width="15" height="10" fill="#855aed"/><rect x="54" y="386" width="15" height="10" fill="#855aed"/><rect x="73" y="386" width="15" height="10" fill="#855aed"/><rect x="92" y="386" width="15" height="10" fill="#855aed"/><rect x="111" y="386" width="15" height="10" fill="#855aed"/><rect x="130" y="386" width="15" height="10" fill="#855aed"/><rect x="149" y="386" width="15" height="10" fill="#855aed"/><rect x="168" y="386" width="15" height="10" fill="#855aed"/><rect x="187" y="386" width="15" height="10" fill="#855aed"/><rect x="206" y="386" width="15" height="10" fill="#855aed"/><rect x="225" y="386" width="15" height="10" fill="#855aed"/><rect x="244" y="386" width="15" height="10" fill="#855aed"/><rect x="263" y="386" width="15" height="10" fill="#855aed"/><rect x="282" y="386" width="15" height="10" fill="#855aed"/><rect x="301" y="386" width="15" height="10" fill="#855aed"/><rect x="320" y="386" width="15" height="10" fill="#855aed"/><rect x="339" y="386" width="15" height="10" fill="#855aed"/><rect x="358" y="386" width="15" height="10" fill="#855aed"/><rect x="377" y="386" width="15" height="10" fill="#855aed"/></g>
   <text x="16" y="378" font-size="13" fill="#e6d3a3">Sabedoria</text>
-  <text x="396" y="378" font-size="14" font-weight="bold" text-anchor="end" fill="#855aed">7</text>
+  <text x="396" y="378" font-size="14" font-weight="bold" text-anchor="end" fill="#855aed">5</text>
   <text x="16" y="410" font-size="10.5" fill="#8a7c62">60 dias ativos no último ano</text>
 
   <rect x="452" y="386" width="380" height="10" fill="#07050a"/>
