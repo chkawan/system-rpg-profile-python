@@ -116,8 +116,13 @@ def buscar(login):
     }
 
 
-def escala(v, mx, teto=20):
-    return max(1, min(teto, round(math.log10(v + 1) / math.log10(mx + 1) * teto)))
+def escala(v, mx, peso=1.0, teto=20):
+    """peso>1: curva generosa (sobe rapido) pro atributo que pesa mais na
+    carreira dev. peso<1: curva exigente (precisa de muito mais input pro
+    mesmo valor) pro atributo que e sinal fraco e facil de inflar."""
+    bruto = math.log10(v + 1) / math.log10(mx + 1)
+    curvado = bruto ** (1 / peso)
+    return max(1, min(teto, round(curvado * teto)))
 
 
 def dias(iso):
@@ -180,8 +185,8 @@ def derivar(d):
     lings = sorted(({"nome": k, "n": v, "fatia": v / total} for k, v in contagem.items()),
                    key=lambda x: -x["n"])
 
-    nivel = max(1, min(99, round(escala(total_repos, 200, 40) +
-                                 escala(estrelas, 5000, 35) + anos * 2)))
+    nivel = max(1, min(99, round(escala(total_repos, 200, teto=40) +
+                                 escala(estrelas, 5000, teto=35) + anos * 2)))
     return {**d, "selados": selados, "estrelas": estrelas,
             "com_url": com_url, "total_repos": total_repos,
             "anos": anos, "recentes": recentes, "lings": lings,
@@ -196,14 +201,17 @@ def atributos(d):
     # folego (tempo aguentando o ritmo), inteligencia e estudo (repertorio
     # de linguagens), sabedoria e disciplina/forca de vontade (constancia
     # de commits) e carisma e presenca social (quem te segue).
+    # peso de cada um = o quanto ele pesa de verdade numa carreira dev -
+    # sem isso todo atributo convergia pra 13-14-15 e sinal fraco (tipo
+    # seguidor) inflava facil demais (ver escala()).
     return [
-        ("Força", escala(d["total_repos"], 200),
+        ("Força", escala(d["total_repos"], 200, peso=1.0),
          f'{d["total_repos"]} repositórios erguidos'),
-        ("Destreza", escala(d["recentes"], 50), f'{d["recentes"]} repositórios com push recente'),
-        ("Constituição", escala(d["anos"], 15), f'{d["anos"]:.1f} anos de estrada sem parar'),
-        ("Inteligência", escala(len(d["lings"]), 20), f'{len(d["lings"])} linguagens estudadas'),
-        ("Sabedoria", escala(d["commits"], 3000), f'{d["commits"]} commits de disciplina no ano'),
-        ("Carisma", escala(d["seguidores"], 5000), f'{d["seguidores"]} seguidores no reino'),
+        ("Destreza", escala(d["recentes"], 50, peso=0.8), f'{d["recentes"]} repositórios com push recente'),
+        ("Constituição", escala(d["anos"], 15, peso=1.5), f'{d["anos"]:.1f} anos de estrada sem parar'),
+        ("Inteligência", escala(len(d["lings"]), 20, peso=1.3), f'{len(d["lings"])} linguagens estudadas'),
+        ("Sabedoria", escala(d["commits"], 3000, peso=1.6), f'{d["commits"]} commits de disciplina no ano'),
+        ("Carisma", escala(d["seguidores"], 5000, peso=0.5), f'{d["seguidores"]} seguidores no reino'),
     ]
 
 
@@ -257,15 +265,43 @@ CLASSE_TITULOS = {
 }
 
 
-def determinar_classe(pontos, vida_pct, mana_pct, vigor_pct):
-    """Força+Vigor -> Guerreiro, Destreza -> Arqueiro, Constituição+Vida ->
-    Aventureiro, Inteligência+Mana -> Mago, Sabedoria -> Curandeiro,
-    Carisma -> Ladino. O vital só entra pra quem tem um vital associado."""
+# vida/mana/vigor por classe, no molde do projeto "The Tower"
+# (eldrin/characters/classes.py): base + crescimento por nivel, e o
+# recurso principal (mana ou vigor) alimentado pelo atributo que aquela
+# classe usa de verdade. o recurso que a classe nao usa de vocacao fica
+# numa trilha secundaria (SEC_BASE/SEC_POR_NIVEL), so pra nao ficar zerado.
+CLASSE_VITAIS = {
+    "guerreiro":   dict(vida_base=10, vida_por_nivel=6, principal="vigor",
+                         princ_base=10, princ_por_nivel=4, princ_attr="Força",
+                         sec_attr="Inteligência"),
+    "arqueiro":    dict(vida_base=8, vida_por_nivel=5, principal="vigor",
+                         princ_base=10, princ_por_nivel=4, princ_attr="Destreza",
+                         sec_attr="Inteligência"),
+    "ladino":      dict(vida_base=8, vida_por_nivel=5, principal="vigor",
+                         princ_base=10, princ_por_nivel=4, princ_attr="Destreza",
+                         sec_attr="Inteligência"),
+    "aventureiro": dict(vida_base=10, vida_por_nivel=6, principal="vigor",
+                         princ_base=10, princ_por_nivel=4, princ_attr="Constituição",
+                         sec_attr="Inteligência"),
+    "mago":        dict(vida_base=6, vida_por_nivel=4, principal="mana",
+                         princ_base=10, princ_por_nivel=4, princ_attr="Inteligência",
+                         sec_attr="Força"),
+    "curandeiro":  dict(vida_base=8, vida_por_nivel=5, principal="mana",
+                         princ_base=10, princ_por_nivel=4, princ_attr="Sabedoria",
+                         sec_attr="Força"),
+}
+SEC_BASE, SEC_POR_NIVEL = 5, 2
+
+
+def determinar_classe(pontos):
+    """Força -> Guerreiro, Destreza -> Arqueiro, Constituição ->
+    Aventureiro, Inteligência -> Mago, Sabedoria -> Curandeiro,
+    Carisma -> Ladino: a classe vem so do atributo que mais se destaca."""
     candidatos = {
-        "guerreiro": pontos["Força"] + vigor_pct * 5,
+        "guerreiro": pontos["Força"],
         "arqueiro": pontos["Destreza"],
-        "aventureiro": pontos["Constituição"] + vida_pct * 5,
-        "mago": pontos["Inteligência"] + mana_pct * 5,
+        "aventureiro": pontos["Constituição"],
+        "mago": pontos["Inteligência"],
         "curandeiro": pontos["Sabedoria"],
         "ladino": pontos["Carisma"],
     }
@@ -592,14 +628,29 @@ def montar_svg(d):
     attrs = atributos(d)
     pontos = {nome: valor for nome, valor, _ in attrs}
 
-    # vida/mana/vigor sobem de teto junto com o atributo que os sustenta,
-    # igual em RPG de mesa: VIDA vem de Constituicao (folego), MANA vem de
-    # Inteligencia (repertorio de linguagens) e VIGOR vem de Forca (musculo
-    # pra sustentar o ritmo). O preenchimento atual usa um sinal recente
-    # relacionado, sempre limitado a esse teto.
-    vida_max = pontos["Constituição"] * 25
-    mana_max = pontos["Inteligência"] * 25
-    vigor_max = pontos["Força"] * 25
+    # classe vem do atributo que mais se destaca, nao da linguagem
+    # principal - decidida antes dos vitais porque agora os vitais
+    # dependem da classe escolhida (ver CLASSE_VITAIS)
+    classe_chave = determinar_classe(pontos)
+    titulo_classe, complemento_classe, arquivo_classe = CLASSE_TITULOS[classe_chave]
+    icone_classe = img_icone(arquivo_classe, 64)
+    icone_classe_fundo = img_icone(arquivo_classe, 170)
+
+    # vida/mana/vigor no molde classico de RPG, igual ao projeto "The
+    # Tower" (eldrin/characters/classes.py + character.py): base +
+    # crescimento por nivel, e o recurso principal (mana ou vigor,
+    # dependendo da classe) alimentado pelo atributo que a classe usa de
+    # verdade - o outro recurso fica numa trilha secundaria, mais modesta.
+    # O preenchimento atual usa um sinal recente relacionado, sempre
+    # limitado a esse teto.
+    cfg = CLASSE_VITAIS[classe_chave]
+    vida_max = cfg["vida_base"] + cfg["vida_por_nivel"] * (d["nivel"] - 1) + pontos["Constituição"] * 2
+    principal_max = cfg["princ_base"] + cfg["princ_por_nivel"] * (d["nivel"] - 1) + pontos[cfg["princ_attr"]] * 2
+    secundario_max = SEC_BASE + SEC_POR_NIVEL * (d["nivel"] - 1) + pontos[cfg["sec_attr"]] * 2
+    if cfg["principal"] == "vigor":
+        vigor_max, mana_max = principal_max, secundario_max
+    else:
+        mana_max, vigor_max = principal_max, secundario_max
     vida_atual = min(vida_max, 40 + d["recentes"] * 15)
     mana_atual = min(mana_max, 30 + d["estrelas"] * 3)
     vigor_atual = min(vigor_max, d["commits"])
@@ -609,18 +660,6 @@ def montar_svg(d):
         ("VIGOR", vigor_atual, vigor_max, PAL_ST),
         ("EXP", d["nivel"] % 10 * 100 + 40, 1000, gold),
     ]
-
-    # classe vem do atributo (+ vital que ele sustenta) que mais se destaca,
-    # nao da linguagem principal
-    classe_chave = determinar_classe(
-        pontos,
-        vida_atual / vida_max if vida_max else 0,
-        mana_atual / mana_max if mana_max else 0,
-        vigor_atual / vigor_max if vigor_max else 0,
-    )
-    titulo_classe, complemento_classe, arquivo_classe = CLASSE_TITULOS[classe_chave]
-    icone_classe = img_icone(arquivo_classe, 64)
-    icone_classe_fundo = img_icone(arquivo_classe, 170)
 
     v = {
         "INK": ink, "STONE": stone, "LIT": lit, "DARK": dark,
