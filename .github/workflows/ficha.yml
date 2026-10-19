@@ -28,7 +28,7 @@ jobs:
       - name: Preencher os blocos do README
         env:
           GH_TOKEN: ${{ secrets.FICHA_TOKEN }}
-          FICHA_LOGIN: chkawan
+          FICHA_LOGIN: ${{ vars.FICHA_LOGIN }}
         run: python scripts/gerar_ficha.py
 
       - name: Commitar se mudou
