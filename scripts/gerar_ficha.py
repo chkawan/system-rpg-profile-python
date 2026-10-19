@@ -776,15 +776,18 @@ def montar_svg(d):
     attrs = atributos(d)
     pontos = {nome: valor for nome, valor, _ in attrs}
 
-    # pontos exibidos na ficha somam exatamente o nivel (igual RPG de
-    # mesa classico: X pontos pra distribuir, voce nao inventa atributo
-    # do nada). Vitais abaixo continuam na escala crua (pontos), que ja é
-    # a mesma pra qualquer nivel - mas a classe agora usa esse orcamento
-    # (pontos_ficha), porque o requisito de classe (ver
-    # determinar_classe) e sobre quanto voce investiu, nao sobre o sinal
-    # bruto - em nivel baixo o orcamento e pequeno demais pra qualificar
-    # em qualquer classe, e cai em Aventureiro de proposito.
-    pontos_ficha = distribuir_pontos(pontos, d["nivel"])
+    # pontos exibidos na ficha somam nivel + bonus inicial (igual RPG de
+    # mesa classico: todo personagem comeca com um punhado de pontos
+    # livres de criacao, antes de qualquer nivel - ver Attributes.
+    # CREATION_FREE_POINTS=10 no projeto "The Tower"). Vitais abaixo
+    # continuam na escala crua (pontos), que ja é a mesma pra qualquer
+    # nivel - mas a classe agora usa esse orcamento (pontos_ficha),
+    # porque o requisito de classe (ver determinar_classe) e sobre
+    # quanto voce investiu, nao sobre o sinal bruto - em nivel baixo o
+    # orcamento (mesmo com o bonus) pode ainda ser pequeno demais pra
+    # qualificar em qualquer classe, e cai em Aventureiro de proposito.
+    BONUS_INICIAL = 10
+    pontos_ficha = distribuir_pontos(pontos, d["nivel"] + BONUS_INICIAL)
 
     # classe vem do atributo (as vezes dois, ver determinar_classe) que
     # mais se destaca - decidida antes dos vitais porque agora os vitais
