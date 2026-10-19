@@ -338,7 +338,7 @@ CLASSE_VITAIS = {
                          mana_base=4, mana_por_nivel=1, mana_attr="Inteligência"),
     "arqueiro":    dict(vida_base=9, vida_por_nivel=5,
                          vigor_base=12, vigor_por_nivel=5, vigor_attr="Destreza",
-                         mana_base=4, mana_por_nivel=1, mana_attr="Inteligência"),
+                         mana_base=4, mana_por_nivel=1, mana_attr="Sabedoria"),
     "ladino":      dict(vida_base=8, vida_por_nivel=4,
                          vigor_base=11, vigor_por_nivel=5, vigor_attr="Destreza",
                          mana_base=5, mana_por_nivel=1, mana_attr="Inteligência"),
@@ -354,21 +354,30 @@ CLASSE_VITAIS = {
 }
 
 
-def determinar_classe(pontos):
-    """Força -> Guerreiro, Destreza -> Ladino, Constituição -> Mago,
-    Inteligência -> Arqueiro, Sabedoria -> Curandeiro, Carisma ->
-    Aventureiro: a classe vem so do atributo que mais se destaca.
-    Em empate, max() pega o primeiro na ordem abaixo - Aventureiro vem
-    primeiro de proposito, antes ate de Guerreiro."""
-    candidatos = {
-        "aventureiro": pontos["Carisma"],
-        "guerreiro": pontos["Força"],
-        "arqueiro": pontos["Inteligência"],
-        "mago": pontos["Constituição"],
-        "curandeiro": pontos["Sabedoria"],
-        "ladino": pontos["Destreza"],
-    }
-    return max(candidatos, key=candidatos.get)
+def determinar_classe(pontos_ficha, minimo=4):
+    """Pre-requisito igual ao de multiclasse do D&D 5e: cada classe exige
+    um minimo no seu atributo principal, e o Arqueiro (Patrulheiro) exige
+    TAMBEM o secundario (Destreza E Sabedoria, igual ao requisito real de
+    DES 13 e SAB 13) - por isso quem tem Destreza mas nao Sabedoria cai
+    no Ladino em vez do Arqueiro. 'pontos_ficha' e o orcamento de pontos
+    que soma ao nivel (distribuir_pontos), nao a escala crua - em nivel
+    1-2 o orcamento e pequeno demais pra bater o minimo em qualquer
+    atributo, e quem nao se qualifica em nenhuma classe cai em
+    Aventureiro, sem atributo associado: o "ainda nao se especializou"."""
+    qualificados = {}
+    if pontos_ficha["Força"] >= minimo:
+        qualificados["guerreiro"] = pontos_ficha["Força"]
+    if pontos_ficha["Destreza"] >= minimo and pontos_ficha["Sabedoria"] >= minimo:
+        qualificados["arqueiro"] = pontos_ficha["Destreza"] + pontos_ficha["Sabedoria"]
+    elif pontos_ficha["Destreza"] >= minimo:
+        qualificados["ladino"] = pontos_ficha["Destreza"]
+    if pontos_ficha["Inteligência"] >= minimo:
+        qualificados["mago"] = pontos_ficha["Inteligência"]
+    if pontos_ficha["Sabedoria"] >= minimo:
+        qualificados["curandeiro"] = pontos_ficha["Sabedoria"]
+    if not qualificados:
+        return "aventureiro"
+    return max(qualificados, key=qualificados.get)
 
 
 def svg_cabecalho(y, titulo, icone, gold, x0=16, largura=848):
@@ -693,14 +702,18 @@ def montar_svg(d):
 
     # pontos exibidos na ficha somam exatamente o nivel (igual RPG de
     # mesa classico: X pontos pra distribuir, voce nao inventa atributo
-    # do nada). Classe e vitais abaixo continuam na escala crua (pontos),
-    # que ja é a mesma pra qualquer nivel - so a exibicao usa o orcamento.
+    # do nada). Vitais abaixo continuam na escala crua (pontos), que ja é
+    # a mesma pra qualquer nivel - mas a classe agora usa esse orcamento
+    # (pontos_ficha), porque o requisito de classe (ver
+    # determinar_classe) e sobre quanto voce investiu, nao sobre o sinal
+    # bruto - em nivel baixo o orcamento e pequeno demais pra qualificar
+    # em qualquer classe, e cai em Aventureiro de proposito.
     pontos_ficha = distribuir_pontos(pontos, d["nivel"])
 
-    # classe vem do atributo que mais se destaca, nao da linguagem
-    # principal - decidida antes dos vitais porque agora os vitais
+    # classe vem do atributo (as vezes dois, ver determinar_classe) que
+    # mais se destaca - decidida antes dos vitais porque agora os vitais
     # dependem da classe escolhida (ver CLASSE_VITAIS)
-    classe_chave = determinar_classe(pontos)
+    classe_chave = determinar_classe(pontos_ficha)
     titulo_classe, complemento_classe, arquivo_classe = CLASSE_TITULOS[classe_chave]
     icone_classe = img_icone(arquivo_classe, 64)
     icone_classe_fundo = img_icone(arquivo_classe, 170)
