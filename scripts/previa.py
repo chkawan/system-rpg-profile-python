@@ -40,8 +40,7 @@ PREVIA = {
  "nome":"Christopher Kawan","login":"chkawan",
  "criado":"2022-01-27T00:00:00Z","local":"Rio de Janeiro, BR",
  "seguidores":4,"commits":123,"dias_ativos":46,
- "repos":[{"nome":n,"push":p+"T00:00:00Z","privado":pr,"estrelas":e,"tem_url":u,"descricao":ds,"ling":l,
-           "linguagens_bytes":[{"nome":l,"bytes":1000+(i*137)%9000}] if l else []}
-          for i,(n,p,pr,e,l,u,ds) in enumerate(REPOS)],
+ "repos":[{"nome":n,"push":p+"T00:00:00Z","privado":pr,"estrelas":e,"tem_url":u,"descricao":ds,"ling":l}
+          for n,p,pr,e,l,u,ds in REPOS],
  "pinned":[{"nome":n,"estrelas":e,"ling":l} for n,e,l in PINNED],
 }

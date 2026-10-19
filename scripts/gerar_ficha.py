@@ -67,9 +67,6 @@ query($login: String!) {
       nodes {
         name pushedAt isPrivate stargazerCount homepageUrl description
         primaryLanguage { name }
-        languages(first: 10, orderBy: {field: SIZE, direction: DESC}) {
-          edges { size node { name } }
-        }
       }
     }
     pinnedItems(first: 6, types: REPOSITORY) {
@@ -96,7 +93,11 @@ def buscar(login):
     )
     dados = r.json()
     if dados.get("errors"):
-        raise SystemExit("GitHub recusou: " + dados["errors"][0]["message"])
+        detalhes = "; ".join(
+            f'{e["message"]} (campo: {".".join(str(p) for p in e.get("path", []))})'
+            for e in dados["errors"]
+        )
+        raise SystemExit("GitHub recusou: " + detalhes)
     if "data" not in dados:
         raise SystemExit(
             f"Resposta inesperada da API (HTTP {r.status_code}): "
@@ -120,9 +121,6 @@ def buscar(login):
             "estrelas": r["stargazerCount"], "tem_url": bool(r["homepageUrl"]),
             "descricao": r["description"],
             "ling": (r["primaryLanguage"] or {}).get("name"),
-            "linguagens_bytes": [
-                {"nome": e["node"]["name"], "bytes": e["size"]} for e in r["languages"]["edges"]
-            ],
         } for r in u["repositories"]["nodes"]],
         "pinned": [{
             "nome": r["name"], "estrelas": r["stargazerCount"],
@@ -192,19 +190,18 @@ def derivar(d):
     recentes = sum(1 for r in repos if dias(r["push"]) < 90)
     missoes = selecionar_missoes(repos, d["login"])
 
-    # linguagem por bytes de codigo, nao mais por "tocou uma vez": um
-    # arquivo isolado de outra linguagem num repo nao conta como skill.
-    # MIN_BYTES filtra esse ruido antes de entrar na lista (usada tanto
-    # nas barras de Habilidades quanto na contagem de Inteligencia).
-    MIN_BYTES = 500
-    bytes_por_lingua = {}
+    # linguagem por contagem de repos onde aparece como principal. Bytes
+    # reais por linguagem (languages{} no GraphQL) ficaria mais preciso,
+    # mas esse campo exige permissao de leitura de conteudo do token
+    # (mesma causa que quebrou o workflow com defaultBranchRef/history) -
+    # revertido pro que ja funcionava ate ter um token com esse escopo.
+    contagem = {}
     for r in repos:
-        for lb in r.get("linguagens_bytes", []):
-            bytes_por_lingua[lb["nome"]] = bytes_por_lingua.get(lb["nome"], 0) + lb["bytes"]
-    bytes_por_lingua = {k: v for k, v in bytes_por_lingua.items() if v >= MIN_BYTES}
-    total_bytes = sum(bytes_por_lingua.values()) or 1
-    lings = sorted(({"nome": k, "bytes": v, "fatia": v / total_bytes} for k, v in bytes_por_lingua.items()),
-                   key=lambda x: -x["bytes"])
+        if r["ling"]:
+            contagem[r["ling"]] = contagem.get(r["ling"], 0) + 1
+    total = sum(contagem.values()) or 1
+    lings = sorted(({"nome": k, "n": v, "fatia": v / total} for k, v in contagem.items()),
+                   key=lambda x: -x["n"])
 
     # media de contribuicoes por repo que voce mantem - nao e o commit
     # daquele repo especifico (isso exigiria permissao de leitura de
@@ -230,11 +227,11 @@ def atributos(d):
     # quanto voce contribui em media por repositorio que mantem - repo
     # criado e abandonado puxa a media pra baixo), constituicao e folego
     # (tempo aguentando o ritmo),
-    # inteligencia e estudo (repertorio de linguagens - por bytes reais de
-    # codigo, nao so por ter tocado uma vez), sabedoria e disciplina/forca
-    # de vontade (dias ativos no calendario, nao total de commits - commit
-    # e alta frequencia e infla facil, aparecer com regularidade e o sinal
-    # de disciplina de verdade) e carisma e presenca social (quem te segue).
+    # inteligencia e estudo (repertorio de linguagens), sabedoria e
+    # disciplina/forca de vontade (dias ativos no calendario, nao total de
+    # commits - commit e alta frequencia e infla facil, aparecer com
+    # regularidade e o sinal de disciplina de verdade) e carisma e
+    # presenca social (quem te segue).
     # peso de cada um = o quanto ele pesa de verdade numa carreira dev. Um
     # peso de 0.5-1.6 nao bastava: os brutos (antes do peso) ficam todos
     # entre 0.6-0.75 (o log comprime demais), entao so um peso bem mais
