@@ -144,33 +144,33 @@ def escala(v, mx, peso=1.0, teto=30):
     return max(1, min(teto, round(curvado * teto)))
 
 
-# custo pra sair do nivel N (ir pro N+1): comeca em XP_BASE e cresce
-# composto (vezes XP_MULTIPLICADOR) a cada nivel, acumulado - sair do
-# nivel 1 custa 100, do nivel 2 custa 150, do nivel 3 custa 225... Isso
-# faz nivel alto ficar raro de verdade (nivel 15-17 ja exige dezenas de
-# milhares de XP), em vez de todo mundo ativo chegar perto do teto.
-XP_BASE, XP_MULTIPLICADOR = 100, 1.5
+# custo pra sair do nivel N (ir pro N+1): linear, N x XP_BASE x
+# XP_MULTIPLICADOR - sair do nivel 1 custa 120, do nivel 2 custa 240, do
+# nivel 3 custa 360... Sem limite de nivel (nivel_de_xp nao tem teto): o
+# nivel sobe enquanto tiver XP pra isso, sem limitador artificial - so a
+# exibicao do numero no medalhao da ficha encolhe a fonte pra nao vazar
+# da borda (ver NIVEL_FONTE em montar_svg).
+XP_BASE, XP_MULTIPLICADOR = 100, 1.2
 
 
-def nivel_de_xp(xp, nivel_max=100):
+def custo_nivel(nivel):
+    return nivel * XP_BASE * XP_MULTIPLICADOR
+
+
+def nivel_de_xp(xp):
     nivel = 1
-    limiar = XP_BASE
     acumulado = 0
-    while nivel < nivel_max and xp >= acumulado + limiar:
-        acumulado += limiar
+    while xp >= acumulado + custo_nivel(nivel):
+        acumulado += custo_nivel(nivel)
         nivel += 1
-        limiar *= XP_MULTIPLICADOR
     return nivel
 
 
 def progresso_nivel(xp, nivel):
     """XP ja acumulado dentro do nivel atual e quanto falta pro proximo -
     pra barra de EXP mostrar progresso de verdade, nao só repetir o total."""
-    acumulado, limiar = 0, XP_BASE
-    for _ in range(nivel - 1):
-        acumulado += limiar
-        limiar *= XP_MULTIPLICADOR
-    return xp - acumulado, limiar
+    acumulado = sum(custo_nivel(n) for n in range(1, nivel))
+    return xp - acumulado, custo_nivel(nivel)
 
 
 # fatia de "total" que cada posicao do ranking leva: 1o lugar fica com
@@ -295,9 +295,11 @@ def derivar(d):
     # estrada, 25 por commit (contribuicoes do ultimo ano), 100 por
     # projeto erguido, e +10 por linguagem diferente DENTRO de cada
     # projeto (um repo com 10 linguagens da 100xp so de bonus de
-    # linguagem, alem dos 100xp do projeto em si).
+    # linguagem, alem dos 100xp do projeto em si). Multiplicador x3 no
+    # final pra premiar quem tem mais projetos/commits de verdade.
+    MULT_XP = 3
     xp_linguagens = sum(len(r.get("linguagens_bytes", [])) for r in repos) * 10
-    xp = round(anos * 100 + d["commits"] * 25 + total_repos * 100 + xp_linguagens)
+    xp = round((anos * 100 + d["commits"] * 25 + total_repos * 100 + xp_linguagens) * MULT_XP)
 
     nivel = nivel_de_xp(xp)
     return {**d, "selados": selados, "estrelas": estrelas,
@@ -827,6 +829,10 @@ def montar_svg(d):
         "INK": ink, "STONE": stone, "LIT": lit, "DARK": dark,
         "GOLD": gold, "VELLUM": VELLUM, "DIM": DIM,
         "NOME": escapar(d["nome"]), "NIVEL": str(d["nivel"]),
+        # medalhao de nivel tem largura fixa (72px uteis) - sem limite de
+        # nivel, o numero pode crescer alem de 2 digitos e vazar da borda;
+        # a fonte encolhe a cada dois digitos extras pra sempre caber.
+        "NIVEL_FONTE": str(max(14, 34 - max(0, len(str(d["nivel"])) - 2) * 7)),
         "CLASSE": escapar(truncar(f'{titulo_classe} - {complemento_classe}', 60)),
         "ICONE_CLASSE": icone_classe(68, 64, gold, gold),
         "LINHA": " . ".join(filter(None, [
