@@ -80,13 +80,17 @@ Os 6 atributos vêm de sinais do GitHub, passados pela função `escala()`:
 ```
 bruto   = log10(valor + 1) / log10(teto_de_referencia + 1)
 curva   = bruto ^ (1 / peso)
-valor   = round(curva × 30), entre 1 e 30
+valor   = round(curva × 100), entre 1 e 100
 ```
 
 `peso` controla a dificuldade da curva: **peso > 1** sobe rápido (curva
 generosa, pouco esforço já dá nota boa); **peso < 1** exige muito mais
 input pro mesmo resultado (curva exigente — serve pra sinal fácil de
 inflar sem esforço real).
+
+Bater exatamente o teto de referência sempre dá **100**, pra qualquer
+atributo, não importa o peso — é matemático (`log10(mx+1)/log10(mx+1) = 1`
+sempre). O peso só decide o quão rápido você chega lá, não o valor no topo.
 
 | Atributo | Fonte do valor | Teto de referência | Peso |
 |---|---|---|---|
@@ -97,9 +101,12 @@ inflar sem esforço real).
 | Sabedoria | dias ativos no calendário do último ano | 365 | 1,2 |
 | Carisma | nº de seguidores | 6.000 | 0,3 |
 
-Tudo isso está em `atributos()`. Dá pra ler esses 6 valores (1 a 30) como
-"o quão forte é o sinal daquele atributo na sua conta" — eles **não** são
-o número final mostrado na ficha (isso é o próximo passo).
+Tudo isso está em `atributos()`. Dá pra ler esses 6 valores (1 a 100) como
+"quantos % do teto daquele sinal você já bateu" — eles **não** são o
+número final mostrado na ficha (isso é o próximo passo), e também não são
+os mesmos pontos usados em Vida/Vigor/Mana: lá o valor bruto entra
+multiplicado por `0.6` em vez de `2` (ver seção 6), pra manter a mesma
+contribuição máxima de antes da escala virar 0-100.
 
 ## 4. Distribuição de pontos — como o nível vira atributo na ficha
 
@@ -165,9 +172,9 @@ Cada classe tem sua própria tabela de base + crescimento por nível, em
 `CLASSE_VITAIS`:
 
 ```
-vida_max  = vida_base  + vida_por_nivel  × (nível − 1) + Constituição × 2
-vigor_max = vigor_base + vigor_por_nivel × (nível − 1) + atributo_de_vigor × 2
-mana_max  = mana_base  + mana_por_nivel  × (nível − 1) + atributo_de_mana × 2
+vida_max  = vida_base  + vida_por_nivel  × (nível − 1) + Constituição × 0.6
+vigor_max = vigor_base + vigor_por_nivel × (nível − 1) + atributo_de_vigor × 0.6
+mana_max  = mana_base  + mana_por_nivel  × (nível − 1) + atributo_de_mana × 0.6
 ```
 
 | Classe | Vida (base/nível) | Vigor (base/nível, atributo) | Mana (base/nível, atributo) |
