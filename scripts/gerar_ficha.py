@@ -598,17 +598,6 @@ def svg_equipamento(d, v, icone_classe_fundo):
                 f'<rect x="{x_hab + 16}" y="{y + 4}" width="{barra_w}" height="3" fill="{v["DARK"]}"/>'
                 f'<rect x="{x_hab + 16}" y="{y + 4}" width="{barra_w * l["fatia"]:.0f}" height="3" fill="{cor}"/>'
             )
-        # inventario: linguagens que ficaram de fora do limite de 7 das
-        # Habilidades (ver lings[:7] acima) - nao sao "equipadas", mas
-        # continuam na mochila, uma linha compacta em vez de barra cheia.
-        extras = d["lings"][7:]
-        if extras:
-            y_inventario = EQUIP_ROWS_Y0 + 7 * EQUIP_ROW_H
-            nomes = ", ".join(l["nome"] for l in extras)
-            out.append(
-                f'<text x="{x_hab}" y="{y_inventario}" font-size="9.5" font-style="italic" '
-                f'fill="{v["DIM"]}">Inventário: {escapar(truncar(nomes, 48))}</text>'
-            )
     return "".join(out)
 
 
