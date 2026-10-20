@@ -199,18 +199,21 @@ personagem em pleno vigor, não no meio de uma missão com recurso gasto.
 
 ## 7. Onde configurar cada coisa
 
-Tudo em `scripts/gerar_ficha.py`, por nome:
+Tudo isso é editável sem tocar no `gerar_ficha.py`, em arquivos de
+configuração separados (todos em `scripts/`):
 
-| Quero mudar... | Onde |
-|---|---|
-| Quanto XP vale cada coisa | constantes dentro de `derivar()`: `MULT_XP`, `TETO_COMMITS_POR_PROJETO`, `MIN_BYTES_LINGUAGEM`, e os números fixos (100/25/100/10) na linha do `xp =` |
-| Custo de nível | `XP_BASE`, `XP_MULTIPLICADOR` |
-| Fonte/peso/teto de cada atributo, e a ordem de desempate | `scripts/atributos_config.py` (`ATRIBUTOS_CONFIG`) |
-| Fatia do ranking na distribuição de pontos | `RANKING_FATIAS` |
-| Bônus de pontos de criação | `BONUS_INICIAL` (dentro de `montar_svg()`) |
-| Teto por atributo na distribuição | o parâmetro `maximo` de `distribuir_pontos()` |
-| Requisito, Vida/Vigor/Mana, título e flavor text de cada classe | `scripts/classes_config.py` (`CLASSES_CONFIG`) |
-| Bio, antecedentes, juramento (texto que não vem da API) | `BIO_TEXTO`, `BIO_TABELA`, `JURAMENTO_TEXTO` |
+| Quero mudar... | Arquivo | O quê |
+|---|---|---|
+| Fonte/peso/teto de cada atributo, e a ordem de desempate | `atributos_config.py` | `ATRIBUTOS_CONFIG` |
+| Fatia do ranking, bônus inicial, teto por atributo na distribuição | `atributos_config.py` | `DISTRIBUICAO_CONFIG` |
+| Requisito, Vida/Vigor/Mana, título e flavor text de cada classe | `classes_config.py` | `CLASSES_CONFIG` |
+| Quanto XP vale cada coisa (ano/commit/projeto/linguagem) | `xp_config.py` | `XP_CONFIG` |
+| Custo de nível | `xp_config.py` | `NIVEL_CONFIG` |
+| Tiers (patentes) e limiares das 5 conquistas | `conquistas_config.py` | `TIERS`, `CONQUISTAS` |
+| Bio, antecedentes, juramento (texto que não vem da API) | `gerar_ficha.py` | `BIO_TEXTO`, `BIO_TABELA`, `JURAMENTO_TEXTO` |
+
+O último item (bio/juramento) continua direto no `gerar_ficha.py` de
+propósito — é conteúdo pessoal do seu perfil, não balanceamento de jogo.
 
 Pra instalar o projeto do zero (token, secrets, workflow), veja o
 [START.md](START.md).
