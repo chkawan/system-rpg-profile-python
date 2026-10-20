@@ -17,7 +17,7 @@ import sys
 import textwrap
 from datetime import datetime, timezone
 
-from atributos_config import ATRIBUTOS_CONFIG
+from atributos_config import ATRIBUTOS_CONFIG, DISTRIBUICAO_CONFIG
 from classes_config import CLASSES_CONFIG
 
 LOGIN = os.environ.get("FICHA_LOGIN")
@@ -188,24 +188,25 @@ def progresso_nivel(xp, nivel):
 # Sinal de GitHub costuma vir parelho (13,14,15...) - exagerar o VALOR
 # (peso**3) nao bastava pra separar; exagerar a POSICAO no ranking sim,
 # porque garante 1o/2o/3o lugar sempre bem diferentes, nao importa o
-# quao proximos os brutos estejam.
-RANKING_FATIAS = [0.40, 0.30, 0.15, 0.10, 0.01, 0.01]
+# quao proximos os brutos estejam. Fatias, bonus inicial e tetos ficam
+# em DISTRIBUICAO_CONFIG, em atributos_config.py.
 
 
-def distribuir_pontos(pesos, total, minimo=1, maximo=30):
+def distribuir_pontos(pesos, total, minimo=1, maximo=DISTRIBUICAO_CONFIG["maximo_por_atributo"]):
     """Reparte 'total' pontos (o nivel, max 100) entre os atributos pela
-    posicao no ranking de cada um (ver RANKING_FATIAS), nao pelo valor
-    bruto. Nenhum atributo passa de 'maximo' (30, o mesmo teto da escala
-    crua) mesmo que a fatia desse ranking desse mais que isso em nivel
-    alto (40% de 100 = 40) - quem estoura o teto fica preso em 'maximo' e
-    o excedente e repartido de novo so entre quem ainda nao estourou.
-    Metodo dos restos maiores (Hamilton) fecha a soma exata no final."""
+    posicao no ranking de cada um (ver DISTRIBUICAO_CONFIG), nao pelo
+    valor bruto. Nenhum atributo passa de 'maximo' mesmo que a fatia desse
+    ranking desse mais que isso em nivel alto (40% de 100 = 40) - quem
+    estoura o teto fica preso em 'maximo' e o excedente e repartido de
+    novo so entre quem ainda nao estourou. Metodo dos restos maiores
+    (Hamilton) fecha a soma exata no final."""
+    fatias_ranking = DISTRIBUICAO_CONFIG["fatias_ranking"]
     n = len(pesos)
     if total <= n * minimo:
         por_peso = sorted(pesos, key=pesos.get, reverse=True)
         return {k: (minimo if i < total else 0) for i, k in enumerate(por_peso)}
     ordenados = sorted(pesos, key=pesos.get, reverse=True)
-    fatias = {nome: RANKING_FATIAS[i] for i, nome in enumerate(ordenados)}
+    fatias = {nome: fatias_ranking[i] for i, nome in enumerate(ordenados)}
 
     pontos = {k: minimo for k in pesos}
     pendente = total - minimo * n
@@ -389,7 +390,7 @@ def img_icone(caminho, tamanho=32):
 # o arquivo (nao um icone(cx,cy,cor,furo) ja pronto) porque a classe
 # ilustra tanto o retrato pequeno no banner quanto o "boneco" de fundo,
 # grande, atras do equipamento - dois tamanhos, mesmo desenho
-def determinar_classe(pontos_ficha, minimo=4):
+def determinar_classe(pontos_ficha, minimo=DISTRIBUICAO_CONFIG["minimo_para_classe"]):
     """Le CLASSES_CONFIG (classes_config.py) pra decidir a classe. Uma
     classe qualifica se TODOS os atributos do seu 'requisito' baterem o
     minimo - igual ao pre-requisito real de multiclasse do D&D 5e (o
@@ -755,8 +756,7 @@ def montar_svg(d):
     # quanto voce investiu, nao sobre o sinal bruto - em nivel baixo o
     # orcamento (mesmo com o bonus) pode ainda ser pequeno demais pra
     # qualificar em qualquer classe, e cai em Aventureiro de proposito.
-    BONUS_INICIAL = 10
-    pontos_ficha = distribuir_pontos(pontos, d["nivel"] + BONUS_INICIAL)
+    pontos_ficha = distribuir_pontos(pontos, d["nivel"] + DISTRIBUICAO_CONFIG["bonus_inicial"])
 
     # classe vem do atributo (as vezes dois, ver determinar_classe) que
     # mais se destaca - decidida antes dos vitais porque agora os vitais
