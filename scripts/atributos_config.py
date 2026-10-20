@@ -115,7 +115,7 @@ ATRIBUTOS_CONFIG = {
 #                          atributo precisa pra contar como requisito de
 #                          classe (ver classes_config.py).
 DISTRIBUICAO_CONFIG = {
-    "fatias_ranking": [0.40, 0.30, 0.15, 0.10, 0.01, 0.01],
+    "fatias_ranking": [0.50, 0.30, 0.15, 0.10, 0.01, 0.01],
     "bonus_inicial": 10,
     "maximo_por_atributo": 30,
     "minimo_para_classe": 4,

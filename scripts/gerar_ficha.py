@@ -19,6 +19,8 @@ from datetime import datetime, timezone
 
 from atributos_config import ATRIBUTOS_CONFIG, DISTRIBUICAO_CONFIG
 from classes_config import CLASSES_CONFIG
+from xp_config import XP_CONFIG, NIVEL_CONFIG
+from conquistas_config import TIERS, SEM_TIER, CONQUISTAS
 
 LOGIN = os.environ.get("FICHA_LOGIN")
 TOKEN = os.environ.get("GH_TOKEN", "")
@@ -154,17 +156,14 @@ def escala(v, mx, peso=1.0, teto=100):
     return max(1, min(teto, round(curvado * teto)))
 
 
-# custo pra sair do nivel N (ir pro N+1): linear, N x XP_BASE x
-# XP_MULTIPLICADOR - sair do nivel 1 custa 120, do nivel 2 custa 240, do
+# custo pra sair do nivel N (ir pro N+1): linear, veja NIVEL_CONFIG em
+# xp_config.py - sair do nivel 1 custa 120, do nivel 2 custa 240, do
 # nivel 3 custa 360... Sem limite de nivel (nivel_de_xp nao tem teto): o
 # nivel sobe enquanto tiver XP pra isso, sem limitador artificial - so a
 # exibicao do numero no medalhao da ficha encolhe a fonte pra nao vazar
 # da borda (ver NIVEL_FONTE em montar_svg).
-XP_BASE, XP_MULTIPLICADOR = 100, 1.2
-
-
 def custo_nivel(nivel):
-    return nivel * XP_BASE * XP_MULTIPLICADOR
+    return nivel * NIVEL_CONFIG["custo_base"] * NIVEL_CONFIG["custo_multiplicador"]
 
 
 def nivel_de_xp(xp):
@@ -302,29 +301,23 @@ def derivar(d):
     # contribuicoes do ano dividido pelo total de repositorios.
     media_commits_repo = d["commits"] / (total_repos or 1)
 
-    # XP recompensa esforco de verdade, nao popularidade: 100 por ano de
-    # estrada, 25 por commit (contribuicoes do ultimo ano, com teto - ver
-    # TETO_COMMITS_POR_PROJETO abaixo), 100 por projeto erguido, e +10 por
-    # linguagem diferente DENTRO de cada projeto (um repo com 10
-    # linguagens da 100xp so de bonus de linguagem, alem dos 100xp do
-    # projeto em si - MIN_BYTES_LINGUAGEM filtra linguagem que so
-    # apareceu de raspao, tipo 1 arquivo de config). Multiplicador x3 no
-    # final pra premiar quem tem mais projetos/commits de verdade.
-    #
-    # Sem teto, 5000 commits num unico repo valeriam mais que 10 anos de
+    # XP recompensa esforco de verdade, nao popularidade - valores em
+    # XP_CONFIG (xp_config.py). Teto de commits por projeto existe porque
+    # sem ele, 5000 commits num unico repo valeriam mais que 10 anos de
     # carreira espalhados em 50 projetos - nao temos commit por repo
     # individual (exigiria permissao que ja quebrou o workflow antes),
-    # entao aproximamos com total_repos x TETO_COMMITS_POR_PROJETO: quem
-    # tem poucos repos nao consegue "esconder" commit em volume infinito
-    # atras de 1 projeto so.
-    TETO_COMMITS_POR_PROJETO = 50
-    MIN_BYTES_LINGUAGEM = 500
-    MULT_XP = 3
-    commits_xp = min(d["commits"], total_repos * TETO_COMMITS_POR_PROJETO)
+    # entao aproximamos com total_repos x teto_commits_por_projeto.
+    commits_xp = min(d["commits"], total_repos * XP_CONFIG["teto_commits_por_projeto"])
     xp_linguagens = sum(
-        1 for r in repos for lb in r.get("linguagens_bytes", []) if lb["bytes"] >= MIN_BYTES_LINGUAGEM
-    ) * 10
-    xp = round((anos * 100 + commits_xp * 25 + total_repos * 100 + xp_linguagens) * MULT_XP)
+        1 for r in repos for lb in r.get("linguagens_bytes", [])
+        if lb["bytes"] >= XP_CONFIG["min_bytes_linguagem"]
+    ) * XP_CONFIG["por_linguagem_no_projeto"]
+    xp = round((
+        anos * XP_CONFIG["por_ano"]
+        + commits_xp * XP_CONFIG["por_commit"]
+        + total_repos * XP_CONFIG["por_projeto"]
+        + xp_linguagens
+    ) * XP_CONFIG["multiplicador_final"])
 
     nivel = nivel_de_xp(xp)
     return {**d, "selados": selados, "estrelas": estrelas,
@@ -440,32 +433,10 @@ def svg_cabecalho(y, titulo, icone, gold, x0=16, largura=848):
 
 
 # tiers de ranqueado, do mais baixo ao mais alto - cada um com cor propria
-TIERS = [
-    ("Ferro", "#53585c"),
-    ("Bronze", "#8a5a3c"),
-    ("Prata", "#9aa5ad"),
-    ("Ouro", "#e0a526"),
-    ("Platina", "#2fb8a6"),
-    ("Esmeralda", "#1fae64"),
-    ("Diamante", "#4f7fdb"),
-    ("Mestre", "#a142c9"),
-    ("Grão-Mestre", "#e0393e"),
-    ("Desafiante", "#f4e04d"),
-]
-SEM_TIER = ("Sem tier", "#5a5245")
-
-# as 5 conquistas que mais pesam pra quem esta avaliando um perfil pra
-# contratacao: consistencia, trabalho protegido/profissional, ferramental,
-# experiencia e projetos realmente publicados. nome, campo em d (ou
-# funcao), descricao curta do que faz upar, icone gravado na medalha,
-# limiares dos 10 tiers
-CONQUISTAS = [
-    ("Ritmo de Forja", "commits", "commits no último ano", img_icone("conquistas/forja.png", 34), [1, 50, 150, 300, 500, 750, 1000, 1500, 2500, 4000]),
-    ("Cofres Selados", "selados", "repositórios privados", img_icone("conquistas/cofre.png", 34), [1, 2, 4, 7, 12, 20, 35, 55, 80, 120]),
-    ("Magias Dominadas", lambda d: len(d["lings"]), "linguagens diferentes", img_icone("conquistas/magias.png", 34), [1, 2, 3, 4, 6, 8, 10, 13, 16, 20]),
-    ("Anos de Jornada", "anos", "anos de conta ativa", img_icone("conquistas/ano.png", 34), [0.5, 1, 2, 3, 4, 5, 7, 9, 12, 15]),
-    ("Portais Abertos", "com_url", "repos com link no ar", img_icone("conquistas/portal.png", 34), [1, 2, 4, 6, 9, 13, 18, 25, 35, 50]),
-]
+# TIERS, SEM_TIER e CONQUISTAS vem de conquistas_config.py. Icones sao so
+# o caminho (string) la, porque img_icone() precisa de ICONES_DIR (so
+# existe aqui) - por isso cada entrada vira icone de verdade so aqui,
+# na hora de montar a lista (ver lista_conquistas() abaixo).
 
 
 def tier_de(valor, limiares):
@@ -492,9 +463,10 @@ def progresso(valor, tier_idx, limiares):
 
 def lista_conquistas(d):
     out = []
-    for nome, campo, descricao, icone, limiares in CONQUISTAS:
-        valor = campo(d) if callable(campo) else d[campo]
-        out.append((nome, descricao, valor, icone, tier_de(valor, limiares), limiares))
+    for c in CONQUISTAS:
+        valor = d[c["fonte"]]
+        icone = img_icone(c["icone"], 34)
+        out.append((c["nome"], c["descricao"], valor, icone, tier_de(valor, c["limiares"]), c["limiares"]))
     return out
 
 # ------------------------------------------------------------------ svg
