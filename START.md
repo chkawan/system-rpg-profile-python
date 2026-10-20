@@ -25,12 +25,14 @@ exemplo (passo 4) não precisa instalar nada.
 ## 3. Personalizar o conteúdo que não vem da API
 
 Alguns textos são escritos à mão, porque a API do GitHub não tem esse nível
-de detalhe (bio, antecedentes, juramento). Edite direto em
-`scripts/gerar_ficha.py`:
+de detalhe (bio, antecedentes, juramento). Edite em `scripts/perfil_config.py`:
 
 - `BIO_TEXTO` e `BIO_TABELA` — a bio e a tabelinha do "Pergaminho do
   Aventureiro" (origem, escola, campo de batalha...)
 - `JURAMENTO_TEXTO` — o texto da seção "Juramento"
+
+E em `scripts/cores_config.py`:
+
 - `CORES` — cores por linguagem, só precisa editar se usar uma linguagem que
   não está na lista
 

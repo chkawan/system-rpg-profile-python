@@ -210,10 +210,12 @@ configuração separados (todos em `scripts/`):
 | Quanto XP vale cada coisa (ano/commit/projeto/linguagem) | `xp_config.py` | `XP_CONFIG` |
 | Custo de nível | `xp_config.py` | `NIVEL_CONFIG` |
 | Tiers (patentes) e limiares das 5 conquistas | `conquistas_config.py` | `TIERS`, `CONQUISTAS` |
-| Bio, antecedentes, juramento (texto que não vem da API) | `gerar_ficha.py` | `BIO_TEXTO`, `BIO_TABELA`, `JURAMENTO_TEXTO` |
+| Bio, antecedentes, juramento (texto que não vem da API) | `perfil_config.py` | `BIO_TEXTO`, `BIO_TABELA`, `JURAMENTO_TEXTO` |
+| Cor de cada linguagem | `cores_config.py` | `CORES` |
 
-O último item (bio/juramento) continua direto no `gerar_ficha.py` de
-propósito — é conteúdo pessoal do seu perfil, não balanceamento de jogo.
+Os dois últimos itens (bio/juramento e cores) ficam em arquivos separados
+de propósito — é conteúdo pessoal/cosmético, não balanceamento de jogo,
+mas ainda assim editável sem tocar no `gerar_ficha.py`.
 
 Pra instalar o projeto do zero (token, secrets, workflow), veja o
 [START.md](START.md).
