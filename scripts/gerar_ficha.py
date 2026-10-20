@@ -18,6 +18,7 @@ import textwrap
 from datetime import datetime, timezone
 
 from atributos_config import ATRIBUTOS_CONFIG
+from classes_config import CLASSES_CONFIG
 
 LOGIN = os.environ.get("FICHA_LOGIN")
 TOKEN = os.environ.get("GH_TOKEN", "")
@@ -145,7 +146,7 @@ def escala(v, mx, peso=1.0, teto=100):
     teto=100 e so escala de exibicao (0-100%, bater o mx de um atributo
     sempre da 100, nao importa o peso - e matematico: log10(mx+1)/
     log10(mx+1) = 1 sempre). Formula antiga usava teto=30; quem depende
-    do valor bruto do atributo (CLASSE_VITAIS, vida/vigor/mana) corrige o
+    do valor bruto do atributo (CLASSES_CONFIG, vida/vigor/mana) corrige o
     multiplicador na mesma proporcao (30/100 = 0.6 em vez de 2) pra nao
     inflar o resultado so por causa da troca de escala."""
     bruto = math.log10(v + 1) / math.log10(mx + 1)
@@ -388,88 +389,40 @@ def img_icone(caminho, tamanho=32):
 # o arquivo (nao um icone(cx,cy,cor,furo) ja pronto) porque a classe
 # ilustra tanto o retrato pequeno no banner quanto o "boneco" de fundo,
 # grande, atras do equipamento - dois tamanhos, mesmo desenho
-CLASSE_TITULOS = {
-    "guerreiro": ("Guerreiro, o Forjador",
-                  "ergue tudo na base da força bruta", "class/guerreiro.png"),
-    "arqueiro": ("Arqueiro, o Caçador de Bugs",
-                 "acerta de longe, sem falhar", "class/arqueiro.png"),
-    "aventureiro": ("Aventureiro, o Sobrevivente",
-                     "sobrevive a qualquer legado", "class/aventureiro.png"),
-    "mago": ("Mago, o Tecelão",
-             "tece lógica onde só havia caos", "class/mago.png"),
-    "curandeiro": ("Curandeiro, o Guardião",
-                   "mantém tudo de pé", "class/healer.png"),
-    "ladino": ("Ladino, o Explorador",
-               "acha a brecha que ninguém viu", "class/ladino.png"),
-}
-
-
-# vida/vigor/mana por classe, no molde do projeto "The Tower"
-# (eldrin/characters/classes.py): base + crescimento por nivel, mais o
-# atributo que alimenta aquele vital especifico vezes 2. Diferente do
-# Tower (que usa a mesma base/crescimento de recurso pra todas as 6
-# classes), aqui cada classe tem sua propria tabela nos 3 vitais - guerreiro
-# tanque de vigor com mana simbolica, mago fragil estourando de mana,
-# cada arquetipo com a cara dele em vez de todo mundo convergir pro mesmo
-# numero.
-# vida_base/vida_por_nivel vem direto do manual (D&D 5E - Livro do
-# Jogador, pag. 11/14): PV 1o nivel = dado maximo + mod. CON; PV por
-# nivel seguinte = media fixa do dado + mod. CON. Medias por dado: d12->7
-# (Barbaro), d10->6 (Guerreiro/Patrulheiro), d8->5 (Clerigo/Ladino),
-# d6->4 (Mago). Aventureiro nao tem classe real equivalente - usa o dado
-# mais resistente (d12) por ser o "sobrevivente". Vigor nao existe no
-# D&D (so Vida e Magia) - invenção nossa pra classe fisica ter um
-# recurso proprio, calibrada a mao pra ficar coerente com a Vida.
-CLASSE_VITAIS = {
-    "guerreiro":   dict(vida_base=10, vida_por_nivel=6,
-                         vigor_base=14, vigor_por_nivel=6, vigor_attr="Força",
-                         mana_base=4, mana_por_nivel=1, mana_attr="Inteligência"),
-    "arqueiro":    dict(vida_base=10, vida_por_nivel=6,
-                         vigor_base=12, vigor_por_nivel=5, vigor_attr="Destreza",
-                         mana_base=4, mana_por_nivel=1, mana_attr="Sabedoria"),
-    "ladino":      dict(vida_base=8, vida_por_nivel=5,
-                         vigor_base=11, vigor_por_nivel=5, vigor_attr="Destreza",
-                         mana_base=5, mana_por_nivel=1, mana_attr="Inteligência"),
-    "aventureiro": dict(vida_base=12, vida_por_nivel=7,
-                         vigor_base=10, vigor_por_nivel=4, vigor_attr="Constituição",
-                         mana_base=5, mana_por_nivel=1, mana_attr="Inteligência"),
-    "mago":        dict(vida_base=6, vida_por_nivel=4,
-                         vigor_base=4, vigor_por_nivel=1, vigor_attr="Força",
-                         mana_base=13, mana_por_nivel=6, mana_attr="Inteligência"),
-    "curandeiro":  dict(vida_base=8, vida_por_nivel=5,
-                         vigor_base=5, vigor_por_nivel=2, vigor_attr="Força",
-                         mana_base=12, mana_por_nivel=5, mana_attr="Sabedoria"),
-}
-
-
 def determinar_classe(pontos_ficha, minimo=4):
-    """Pre-requisito igual ao de multiclasse do D&D 5e: cada classe exige
-    um minimo no seu atributo principal, e o Arqueiro (Patrulheiro) exige
-    TAMBEM o secundario (Destreza E Sabedoria, igual ao requisito real de
-    DES 13 e SAB 13) - por isso quem tem Destreza mas nao Sabedoria cai
-    no Ladino em vez do Arqueiro. 'pontos_ficha' e o orcamento de pontos
-    que soma ao nivel (distribuir_pontos), nao a escala crua - em nivel
-    1-2 o orcamento e pequeno demais pra bater o minimo em qualquer
-    atributo, e quem nao se qualifica em nenhuma classe cai em
-    Aventureiro, sem atributo associado: o "ainda nao se especializou".
-    O score do Arqueiro usa min(Destreza, Sabedoria), nao soma - soma
-    deixava a classe dual artificialmente mais forte que qualquer classe
-    de atributo unico (2o+3o lugar somados batia o 1o lugar sozinho),
-    mesmo sem o Arqueiro ser de fato o mais especializado nos dois."""
-    qualificados = {}
-    if pontos_ficha["Força"] >= minimo:
-        qualificados["guerreiro"] = pontos_ficha["Força"]
-    if pontos_ficha["Destreza"] >= minimo and pontos_ficha["Sabedoria"] >= minimo:
-        qualificados["arqueiro"] = min(pontos_ficha["Destreza"], pontos_ficha["Sabedoria"])
-    elif pontos_ficha["Destreza"] >= minimo:
-        qualificados["ladino"] = pontos_ficha["Destreza"]
-    if pontos_ficha["Inteligência"] >= minimo:
-        qualificados["mago"] = pontos_ficha["Inteligência"]
-    if pontos_ficha["Sabedoria"] >= minimo:
-        qualificados["curandeiro"] = pontos_ficha["Sabedoria"]
+    """Le CLASSES_CONFIG (classes_config.py) pra decidir a classe. Uma
+    classe qualifica se TODOS os atributos do seu 'requisito' baterem o
+    minimo - igual ao pre-requisito real de multiclasse do D&D 5e (o
+    Patrulheiro exige Destreza E Sabedoria juntos, nao um ou outro).
+    'pontos_ficha' e o orcamento de pontos que soma ao nivel
+    (distribuir_pontos), nao a escala crua - em nivel 1-2 o orcamento e
+    pequeno demais pra bater o minimo em qualquer atributo, e quem nao se
+    qualifica em nenhuma classe cai na classe de requisito vazio
+    (Aventureiro): o "ainda nao se especializou".
+
+    O score de cada classe qualificada e o MINIMO entre os atributos do
+    seu requisito, nao a soma - soma deixava classe de requisito duplo
+    artificialmente mais forte que qualquer classe de requisito simples
+    (2o+3o lugar do ranking somados batia o 1o lugar sozinho), mesmo sem
+    ela ser de fato a mais especializada nos dois.
+
+    Quando o requisito de uma classe e subconjunto estrito do requisito
+    de outra classe tambem qualificada (ex: Ladino=[Destreza] e
+    Arqueiro=[Destreza,Sabedoria]), a mais especifica (Arqueiro) sempre
+    vence, mesmo com score igual ou menor - ela "absorve" a mais generica."""
+    qualificados = []
+    for classe, cfg in CLASSES_CONFIG.items():
+        requisito = cfg["requisito"]
+        if requisito and all(pontos_ficha[attr] >= minimo for attr in requisito):
+            score = min(pontos_ficha[attr] for attr in requisito)
+            qualificados.append((classe, set(requisito), score))
     if not qualificados:
         return "aventureiro"
-    return max(qualificados, key=qualificados.get)
+    finalistas = [
+        (classe, score) for classe, requisito, score in qualificados
+        if not any(requisito < outro_requisito for _, outro_requisito, _ in qualificados if outro_requisito != requisito)
+    ]
+    return max(finalistas, key=lambda item: item[1])[0]
 
 
 def svg_cabecalho(y, titulo, icone, gold, x0=16, largura=848):
@@ -807,21 +760,21 @@ def montar_svg(d):
 
     # classe vem do atributo (as vezes dois, ver determinar_classe) que
     # mais se destaca - decidida antes dos vitais porque agora os vitais
-    # dependem da classe escolhida (ver CLASSE_VITAIS)
+    # dependem da classe escolhida (ver CLASSES_CONFIG, em classes_config.py)
     classe_chave = determinar_classe(pontos_ficha)
-    titulo_classe, complemento_classe, arquivo_classe = CLASSE_TITULOS[classe_chave]
+    cfg = CLASSES_CONFIG[classe_chave]
+    titulo_classe, complemento_classe, arquivo_classe = cfg["titulo"], cfg["complemento"], cfg["icone"]
     icone_classe = img_icone(arquivo_classe, 64)
     icone_classe_fundo = img_icone(arquivo_classe, 170)
 
     # vida/vigor/mana no molde classico de RPG, igual ao projeto "The
     # Tower" (eldrin/characters/classes.py + character.py): base +
     # crescimento por nivel, mais o atributo que alimenta aquele vital
-    # vezes 2. Cada classe tem sua propria tabela nos 3 vitais (ver
-    # CLASSE_VITAIS), entao guerreiro e mago nao convergem pro mesmo
+    # vezes 0.6. Cada classe tem sua propria tabela nos 3 vitais (ver
+    # CLASSES_CONFIG), entao guerreiro e mago nao convergem pro mesmo
     # numero so porque tem o mesmo nivel. Atual = maximo sempre: a ficha
     # retrata o personagem em pleno vigor (full), nao um estado de
     # "gastou X de Y" no meio de uma missao.
-    cfg = CLASSE_VITAIS[classe_chave]
     # atributo bruto agora e escala 0-100 (era 0-30) - 0.6 em vez do 2
     # antigo mantem a mesma contribuicao maxima de antes (30*2 = 100*0.6)
     vida_max = cfg["vida_base"] + cfg["vida_por_nivel"] * (d["nivel"] - 1) + pontos["Constituição"] * 0.6
