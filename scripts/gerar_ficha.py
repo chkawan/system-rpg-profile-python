@@ -23,6 +23,7 @@ from xp_config import XP_CONFIG, NIVEL_CONFIG
 from conquistas_config import TIERS, SEM_TIER, CONQUISTAS
 from cores_config import CORES
 from perfil_config import BIO_TEXTO, BIO_TABELA, JURAMENTO_TEXTO
+from itens_config import ITENS_CONFIG
 
 LOGIN = os.environ.get("FICHA_LOGIN")
 TOKEN = os.environ.get("GH_TOKEN", "")
@@ -356,6 +357,24 @@ def img_icone(caminho, tamanho=32):
     return render
 
 
+def img_icone_item(caminho, tamanho):
+    """Como img_icone, mas pros icones de item (ficha/icones/itens/), que
+    ficam fora do repo de proposito (ver .gitignore). Na ficha publica
+    gerada pelo Actions esse diretorio nao existe, entao em vez de quebrar
+    com FileNotFoundError cai num placeholder generico no slot."""
+    if not os.path.isfile(os.path.join(ICONES_DIR, caminho)):
+        def render_placeholder(cx, cy, cor, furo):
+            r = tamanho * 0.28
+            return (
+                f'<rect x="{cx - r:.1f}" y="{cy - r:.1f}" width="{r * 2:.1f}" height="{r * 2:.1f}" '
+                f'rx="3" fill="none" stroke="{furo}" stroke-width="1.2" stroke-dasharray="3,2" opacity="0.5"/>'
+                f'<text x="{cx:.1f}" y="{cy + r * 0.55:.1f}" font-size="{r:.1f}" text-anchor="middle" '
+                f'fill="{furo}" opacity="0.5">?</text>'
+            )
+        return render_placeholder
+    return img_icone(caminho, tamanho)
+
+
 
 
 
@@ -526,60 +545,66 @@ def escapar(texto):
     return str(texto).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
-def svg_slot(cx, cy, w, nome, cor_hex, v):
-    """Um slot de equipamento preenchido: moldura + preenchimento na cor da
-    linguagem do repo fixado + nome embaixo (sem icone por repo, o nome faz
-    esse papel)."""
-    cor = cor_hex if cor_hex.startswith("#") else "#" + cor_hex
+def nome_de_arquivo_item(arquivo):
+    """'elmo_pesado.png' -> 'Elmo Pesado' - nome de exibicao pros slots
+    (elmo/armadura/bota) que o itens_config.py nao da um nome_base
+    proprio, so o arquivo do icone."""
+    base = arquivo.rsplit(".", 1)[0]
+    return " ".join(p.capitalize() for p in base.split("_"))
+
+
+def svg_item_slot(cx, cy, w, nome, icone_render, v):
+    """Um slot de equipamento preenchido com o item de classe (ver
+    ITENS_CONFIG em itens_config.py): moldura + icone do item + nome
+    embaixo."""
     r = w / 2
     return (
         f'<rect x="{cx - r:.0f}" y="{cy - r:.0f}" width="{w}" height="{w}" rx="4" '
         f'fill="{v["DARK"]}" stroke="{v["GOLD"]}" stroke-width="1.5"/>'
-        f'<rect x="{cx - r + 4:.0f}" y="{cy - r + 4:.0f}" width="{w - 8}" height="{w - 8}" rx="2" fill="{cor}"/>'
-        f'<text x="{cx:.0f}" y="{cy + r + 11:.0f}" font-size="8.5" text-anchor="middle" '
-        f'fill="{v["DIM"]}">{escapar(nome)}</text>'
+        + icone_render(cx, cy, v["GOLD"], v["GOLD"])
+        + f'<text x="{cx:.0f}" y="{cy + r + 11:.0f}" font-size="7" text-anchor="middle" '
+        f'fill="{v["DIM"]}">{escapar(truncar(nome, 10))}</text>'
     )
 
 
-def svg_slot_vazio(cx, cy, w, v):
-    """Slot sem repo fixado nessa posicao - convite pra equipar algo."""
-    r = w / 2
-    return (
-        f'<rect x="{cx - r:.0f}" y="{cy - r:.0f}" width="{w}" height="{w}" rx="4" '
-        f'fill="none" stroke="{v["DIM"]}" stroke-width="1.5" stroke-dasharray="4,3"/>'
-        f'<text x="{cx:.0f}" y="{cy + 4:.0f}" font-size="16" text-anchor="middle" fill="{v["DIM"]}">+</text>'
-        f'<text x="{cx:.0f}" y="{cy + r + 11:.0f}" font-size="8.5" text-anchor="middle" '
-        f'fill="{v["DIM"]}">vazio</text>'
-    )
-
-
-def svg_equipamento(d, v, icone_classe_fundo):
+def svg_equipamento(d, v, icone_classe_fundo, classe_chave):
     """Duas secoes lado a lado: EQUIPAMENTO - um boneco em cruz (elmo,
     arma, armadura, arma, bota) com o icone da classe atual desenhado
-    atras, meio transparente, e cada slot preenchido por um dos seus repos
-    fixados no perfil (equipar de verdade = dar pin no GitHub) - e
-    HABILIDADES (linguagem = skill, nivel = % dos repos, dado real)."""
+    atras, meio transparente, e cada slot preenchido pelo set de item da
+    classe (ver ITENS_CONFIG em itens_config.py - icones so locais, nao
+    vao pro repo publico, ver .gitignore). As armas levam o nome gerado
+    "{nome_base} de {linguagem}", usando a linguagem dos repos fixados no
+    perfil (equipar de verdade = dar pin no GitHub) - e HABILIDADES
+    (linguagem = skill, nivel = % dos repos, dado real)."""
     x_hab = 452
     largura_col = 396
     out = []
 
     cx_arm, w_slot, gap_h = 214, 40, 14
     cy_elmo, cy_meio, cy_bota = 500, 556, 612
-    posicoes = [
-        (cx_arm, cy_elmo),
-        (cx_arm - w_slot - gap_h, cy_meio),
-        (cx_arm, cy_meio),
-        (cx_arm + w_slot + gap_h, cy_meio),
-        (cx_arm, cy_bota),
-    ]
     out.append(f'<g opacity="0.16">{icone_classe_fundo(cx_arm, cy_meio, v["GOLD"], v["GOLD"])}</g>')
-    for i, (sx, sy) in enumerate(posicoes):
-        if i < len(d["pinned"]):
-            repo = d["pinned"][i]
-            cor = CORES.get(repo["ling"], "8a7c62")
-            out.append(svg_slot(sx, sy, w_slot, truncar(nome_missao(repo["nome"]), 12), cor, v))
+
+    cfg = ITENS_CONFIG[classe_chave]
+    pinned = d["pinned"]
+    ling_principal = pinned[0]["ling"] if len(pinned) > 0 and pinned[0]["ling"] else None
+    ling_secundaria = pinned[1]["ling"] if len(pinned) > 1 and pinned[1]["ling"] else None
+
+    slots = [
+        (cx_arm, cy_elmo, cfg["elmo"], None),
+        (cx_arm - w_slot - gap_h, cy_meio, cfg["arma_principal"], ling_principal),
+        (cx_arm, cy_meio, cfg["armadura"], None),
+        (cx_arm + w_slot + gap_h, cy_meio, cfg["arma_secundaria"], ling_secundaria),
+        (cx_arm, cy_bota, cfg["bota"], None),
+    ]
+    for sx, sy, item, linguagem in slots:
+        if isinstance(item, dict):
+            nome = item["nome_base"] + (f' de {linguagem}' if linguagem else "")
+            arquivo = item["icone"]
         else:
-            out.append(svg_slot_vazio(sx, sy, w_slot, v))
+            nome = nome_de_arquivo_item(item)
+            arquivo = item
+        icone_render = img_icone_item(f"itens/{arquivo}", w_slot - 8)
+        out.append(svg_item_slot(sx, sy, w_slot, nome, icone_render, v))
 
     if not d["lings"]:
         out.append(f'<text x="{x_hab}" y="{EQUIP_ROWS_Y0}" font-size="11.5" '
@@ -790,7 +815,7 @@ def montar_svg(d):
         v[f"PIP_{letra}"] = pips(col, y, gold)
         v[f"N_{letra}"], v[f"V_{letra}"], v[f"D_{letra}"] = escapar(nome), str(valor), escapar(porque)
 
-    v["BLOCO_EQUIP"] = svg_equipamento(d, v, icone_classe_fundo)
+    v["BLOCO_EQUIP"] = svg_equipamento(d, v, icone_classe_fundo, classe_chave)
     v["BLOCO_PERGAMINHO"] = svg_pergaminho(v)
     v["BLOCO_FEITOS"] = svg_conquistas(d, v)
     v["BLOCO_MISSOES"] = svg_missoes(d, v)
