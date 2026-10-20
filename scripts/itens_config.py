@@ -4,10 +4,9 @@ boneco (elmo, armadura, arma principal, arma secundaria, bota) e o nome
 base de cada arma/escudo, usado pra gerar o nome completo do item
 mostrado na ficha.
 
-Os icones ficam em ficha/icones/itens/ - esse diretorio e SO LOCAL (ver
-.gitignore), nao sobe pro repositorio publico. Qualquer coisa que use
-esse config so funciona rodando o script localmente, nunca na ficha
-publica gerada pelo workflow do GitHub Actions.
+Os icones ficam em ficha/icones/itens/. Se um arquivo listado aqui nao
+existir nesse diretorio, img_icone_item() (gerar_ficha.py) cai num
+placeholder generico no slot em vez de quebrar a geracao da ficha.
 
 Cada classe tem um set completo (os 5 slots preenchidos), mesmo quando
 o icone e compartilhado com outra classe parecida (ex: Mago e

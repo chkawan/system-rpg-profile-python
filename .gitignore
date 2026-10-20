@@ -12,10 +12,3 @@ backup/
 # Dados de exemplo pra testar localmente sem gastar chamada na API do
 # GitHub (gerar_ficha.py --previa) - fica so local, nao vai pro repo publico
 scripts/previa.py
-
-# Icones de item importados do The Tower - fica so local de proposito.
-# O workflow automatico do GitHub nao tem acesso a esses arquivos (so
-# enxerga o que esta commitado), entao qualquer feature da ficha que
-# depender deles so funciona rodando o script localmente, nunca na ficha
-# publica gerada pelo Actions.
-ficha/icones/itens/

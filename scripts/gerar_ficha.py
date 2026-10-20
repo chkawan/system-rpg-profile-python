@@ -30,11 +30,9 @@ TOKEN = os.environ.get("GH_TOKEN", "")
 README = os.path.join(os.path.dirname(__file__), "..", "README.md")
 ICONES_DIR = os.path.join(os.path.dirname(__file__), "..", "ficha", "icones")
 
-# armaduras: ferramentas/plataformas do dia a dia - curado a mao porque a
-# API do GitHub nao da esse nivel de detalhe (framework, nuvem, BI...),
-# diferente de habilidades (linguagem), que vem direto dos repos.
-# conteudo estatico do "Pergaminho do aventureiro" e do "Juramento" vem de
-# perfil_config.py - nao vem da API do GitHub, e texto que voce edita la.
+# O conteudo estatico do "Pergaminho do aventureiro" e do "Juramento" nao
+# vem da API do GitHub: e texto fixo, definido em perfil_config.py
+# (BIO_TEXTO, BIO_TABELA, JURAMENTO_TEXTO).
 
 QUERY = """
 query($login: String!) {
@@ -124,27 +122,32 @@ def buscar(login):
 
 
 def escala(v, mx, peso=1.0, teto=100):
-    """peso>1: curva generosa (sobe rapido) pro atributo que pesa mais na
-    carreira dev. peso<1: curva exigente (precisa de muito mais input pro
-    mesmo valor) pro atributo que e sinal fraco e facil de inflar.
+    """Normaliza um valor bruto `v` pra escala 0-100: calcula
+    log10(v+1)/log10(mx+1) (0-1) e aplica o expoente 1/peso sobre o
+    resultado antes de multiplicar por `teto`.
 
-    teto=100 e so escala de exibicao (0-100%, bater o mx de um atributo
-    sempre da 100, nao importa o peso - e matematico: log10(mx+1)/
-    log10(mx+1) = 1 sempre). Formula antiga usava teto=30; quem depende
-    do valor bruto do atributo (CLASSES_CONFIG, vida/vigor/mana) corrige o
-    multiplicador na mesma proporcao (30/100 = 0.6 em vez de 2) pra nao
-    inflar o resultado so por causa da troca de escala."""
+    peso > 1: curva mais permissiva, atinge valores altos com pouco input.
+    peso < 1: curva mais exigente, precisa de muito mais input pro mesmo
+    resultado. Usar peso baixo em sinais faceis de inflar artificialmente.
+
+    Bater exatamente `mx` sempre resulta em 100, independente do peso
+    (log10(mx+1)/log10(mx+1) = 1) - o peso so afeta a curva abaixo do
+    teto, nao o teto em si.
+
+    `teto` por padrao e 100 (escala de exibicao). Formulas que dependem do
+    valor bruto do atributo (CLASSES_CONFIG, vida/vigor/mana) usam o fator
+    0.6 em vez de 2 porque a escala de referencia mudou de 0-30 para
+    0-100 (30/100 = 0.6), mantendo a mesma contribuicao maxima."""
     bruto = math.log10(v + 1) / math.log10(mx + 1)
     curvado = bruto ** (1 / peso)
     return max(1, min(teto, round(curvado * teto)))
 
 
-# custo pra sair do nivel N (ir pro N+1): linear, veja NIVEL_CONFIG em
-# xp_config.py - sair do nivel 1 custa 120, do nivel 2 custa 240, do
-# nivel 3 custa 360... Sem limite de nivel (nivel_de_xp nao tem teto): o
-# nivel sobe enquanto tiver XP pra isso, sem limitador artificial - so a
-# exibicao do numero no medalhao da ficha encolhe a fonte pra nao vazar
-# da borda (ver NIVEL_FONTE em montar_svg).
+# Custo de XP pra sair do nivel N e ir pro N+1, linear (ver NIVEL_CONFIG
+# em xp_config.py): nivel 1 custa 120, nivel 2 custa 240, nivel 3 custa
+# 360, etc. nivel_de_xp() nao impoe teto maximo de nivel; a exibicao do
+# numero no medalhao da ficha e quem se ajusta (ver NIVEL_FONTE em
+# montar_svg), encolhendo a fonte conforme o numero de digitos cresce.
 def custo_nivel(nivel):
     return nivel * NIVEL_CONFIG["custo_base"] * NIVEL_CONFIG["custo_multiplicador"]
 
@@ -159,29 +162,28 @@ def nivel_de_xp(xp):
 
 
 def progresso_nivel(xp, nivel):
-    """XP ja acumulado dentro do nivel atual e quanto falta pro proximo -
-    pra barra de EXP mostrar progresso de verdade, nao só repetir o total."""
+    """Retorna (xp_no_nivel_atual, xp_necessario_pro_proximo_nivel), usado
+    pela barra de EXP pra mostrar progresso real dentro do nivel atual em
+    vez do total acumulado."""
     acumulado = sum(custo_nivel(n) for n in range(1, nivel))
     return xp - acumulado, custo_nivel(nivel)
 
 
-# fatia de "total" que cada posicao do ranking leva: 1o lugar fica com
-# 40%, 2o com 30%, 3o com 15%, 4o com 10%, 5o e 6o ficam so no residual.
-# Sinal de GitHub costuma vir parelho (13,14,15...) - exagerar o VALOR
-# (peso**3) nao bastava pra separar; exagerar a POSICAO no ranking sim,
-# porque garante 1o/2o/3o lugar sempre bem diferentes, nao importa o
-# quao proximos os brutos estejam. Fatias, bonus inicial e tetos ficam
-# em DISTRIBUICAO_CONFIG, em atributos_config.py.
+# A fatia do orcamento de pontos que cada posicao no ranking de atributos
+# recebe (1o lugar, 2o lugar, ...) vem de DISTRIBUICAO_CONFIG
+# (atributos_config.py), nao daqui. A fatia e definida pela POSICAO no
+# ranking, nao pelo valor bruto do atributo: sinais do GitHub tendem a
+# ficar proximos entre si (ex: 13, 14, 15), entao escalar o valor bruto
+# (peso**n) nao separava os atributos de forma significativa.
 
 
 def distribuir_pontos(pesos, total, minimo=1, maximo=DISTRIBUICAO_CONFIG["maximo_por_atributo"]):
-    """Reparte 'total' pontos (o nivel, max 100) entre os atributos pela
-    posicao no ranking de cada um (ver DISTRIBUICAO_CONFIG), nao pelo
-    valor bruto. Nenhum atributo passa de 'maximo' mesmo que a fatia desse
-    ranking desse mais que isso em nivel alto (40% de 100 = 40) - quem
-    estoura o teto fica preso em 'maximo' e o excedente e repartido de
-    novo so entre quem ainda nao estourou. Metodo dos restos maiores
-    (Hamilton) fecha a soma exata no final."""
+    """Reparte `total` pontos entre os atributos de `pesos` pela posicao
+    de cada um no ranking (ver DISTRIBUICAO_CONFIG em atributos_config.py),
+    nao pelo valor bruto. Nenhum atributo ultrapassa `maximo`: quem estoura
+    fica preso nesse teto e o excedente e redistribuido entre os atributos
+    que ainda nao estouraram. Usa o metodo dos restos maiores (Hamilton)
+    pra garantir que a soma final bata exatamente com `total`."""
     fatias_ranking = DISTRIBUICAO_CONFIG["fatias_ranking"]
     n = len(pesos)
     if total <= n * minimo:
@@ -219,10 +221,10 @@ def dias(iso):
     return (datetime.now(timezone.utc) - d).days
 
 
-# a maioria dos repos usa nome de gerador tipo "tool-password-generator-python"
-# em vez de um nome de projeto de verdade. como nao da pra saber o nome real,
-# a missao vira o slug sem o prefixo de categoria e o sufixo de linguagem/
-# framework, virado titulo - fica "Password Generator" em vez do slug cru.
+# Nomes de repositorio costumam seguir o padrao
+# "<categoria>-<nome>-<linguagem>" (ex: "tool-password-generator-python").
+# nome_missao() remove prefixo de categoria e sufixo de linguagem/framework
+# conhecidos e converte o restante em titulo (ex: "Password Generator").
 PREFIXOS_GENERICOS = {"tool", "tools", "system", "systems", "sistema", "sistemas",
                        "api", "bot", "app", "projeto", "template"}
 SUFIXOS_TECNICOS = {"python", "py", "php", "javascript", "js", "typescript", "ts",
@@ -245,9 +247,10 @@ def nome_missao(nome_repo):
 
 
 def selecionar_missoes(repos, login, max_privadas=6, max_publicas=4):
-    """Repos privados viram as missoes principais (projetos pessoais de
-    verdade), todos entram. Publico so entra se tiver URL - sem link no ar
-    nao conta como missao publica. Exclui o repo de perfil (README)."""
+    """Seleciona ate `max_privadas` repositorios privados (todos entram,
+    por serem projetos pessoais) e ate `max_publicas` repositorios
+    publicos com URL de deploy (sem link no ar nao conta como missao
+    publica). Exclui o repositorio de perfil (mesmo nome do login)."""
     candidatos = [r for r in repos if r["nome"].lower() != login.lower()]
     privadas = sorted((r for r in candidatos if r["privado"]),
                        key=lambda r: r["push"], reverse=True)[:max_privadas]
@@ -265,12 +268,13 @@ def derivar(d):
     anos = dias(d["criado"]) / 365.25
     missoes = selecionar_missoes(repos, d["login"])
 
-    # linguagem principal de cada repo, pesada pelo tamanho (diskUsage,
-    # em KB) dos repos onde ela domina - nao so contagem de repos, que
-    # empatava fácil (duas linguagens com o mesmo numero de repos ficavam
-    # na ordem em que o git retornou, nao por relevancia de verdade).
-    # diskUsage e metadata simples, nao exige a permissao de conteudo que
-    # linguagens_bytes (usado so no bonus de XP) precisa.
+    # Agrega o diskUsage (KB) dos repositorios por linguagem principal,
+    # nao contagem de repositorios: contagem simples gera empates
+    # frequentes (duas linguagens com o mesmo numero de repos), que
+    # ficariam ordenados pela ordem de retorno da API, nao por relevancia.
+    # diskUsage e metadado do repositorio (sem permissao extra no token);
+    # linguagens_bytes, usado so no bonus de XP, exige permissao de
+    # leitura de conteudo.
     tamanho_por_lingua = {}
     for r in repos:
         if r["ling"]:
@@ -279,19 +283,20 @@ def derivar(d):
     lings = sorted(({"nome": k, "kb": v, "fatia": v / total_kb} for k, v in tamanho_por_lingua.items()),
                    key=lambda x: -x["kb"])
 
-    # media de contribuicoes por repo que voce mantem - nao e o commit
-    # daquele repo especifico (isso exigiria permissao de leitura de
-    # conteudo do token, que o FICHA_TOKEN nao tem - foi o que quebrou o
-    # workflow), mas usa dados que a API ja entrega de graca: total de
-    # contribuicoes do ano dividido pelo total de repositorios.
+    # Media de contribuicoes por repositorio mantido: total de
+    # contribuicoes do ano dividido pelo total de repositorios. Nao e o
+    # commit count por repositorio individual, que exigiria escopo de
+    # leitura de conteudo no token (nao disponivel pro FICHA_TOKEN usado
+    # no workflow publico).
     media_commits_repo = d["commits"] / (total_repos or 1)
 
-    # XP recompensa esforco de verdade, nao popularidade - valores em
-    # XP_CONFIG (xp_config.py). Teto de commits por projeto existe porque
-    # sem ele, 5000 commits num unico repo valeriam mais que 10 anos de
-    # carreira espalhados em 50 projetos - nao temos commit por repo
-    # individual (exigiria permissao que ja quebrou o workflow antes),
-    # entao aproximamos com total_repos x teto_commits_por_projeto.
+    # Valores de XP por fonte ficam em XP_CONFIG (xp_config.py). O teto de
+    # commits por projeto (teto_commits_por_projeto) evita que um volume
+    # alto de commits concentrado em poucos repositorios valha mais XP que
+    # uma trajetoria longa distribuida em varios projetos. Sem acesso a
+    # commit count por repositorio individual (ver nota em
+    # media_commits_repo acima), aproxima-se o teto como
+    # total_repos x teto_commits_por_projeto.
     commits_xp = min(d["commits"], total_repos * XP_CONFIG["teto_commits_por_projeto"])
     xp_linguagens = sum(
         1 for r in repos for lb in r.get("linguagens_bytes", [])
@@ -314,10 +319,10 @@ def derivar(d):
 
 
 def atributos(d):
-    """Le a configuracao de atributos_config.py e calcula cada um - fonte,
-    teto (mx) e peso vem de la, nao daqui. Pra reorganizar de onde um
-    atributo tira o numero (ou o peso/teto dele), edite ATRIBUTOS_CONFIG
-    em scripts/atributos_config.py, nao este arquivo."""
+    """Calcula os 6 atributos a partir de ATRIBUTOS_CONFIG
+    (atributos_config.py): fonte, teto de referencia (mx) e peso de cada
+    atributo sao definidos la, nao neste modulo. Retorna uma lista de
+    tuplas (nome, pontos, texto_explicativo)."""
     resultado = []
     for nome, cfg in ATRIBUTOS_CONFIG.items():
         fonte = cfg["fonte"]
@@ -335,9 +340,10 @@ def atributos(d):
 
 
 # ------------------------------------------------------------- iconografia
-# icones vetoriais pequenos (cx,cy = centro, cor = traco/preenchimento,
-# furo = cor usada em recortes tipo buraco de fechadura). Usados tanto nas
-# medalhas de conquista quanto nos cabecalhos de secao.
+# Convencao de assinatura pros icones usados em medalhas de conquista e
+# cabecalhos de secao: icone(cx, cy, cor, furo) -> string SVG, onde (cx,cy)
+# e o centro, `cor` e a cor de traco/preenchimento e `furo` e usado em
+# recortes internos (ex: vazado tipo buraco de fechadura).
 
 _CACHE_IMG = {}
 
@@ -358,10 +364,10 @@ def img_icone(caminho, tamanho=32):
 
 
 def img_icone_item(caminho, tamanho):
-    """Como img_icone, mas pros icones de item (ficha/icones/itens/), que
-    ficam fora do repo de proposito (ver .gitignore). Na ficha publica
-    gerada pelo Actions esse diretorio nao existe, entao em vez de quebrar
-    com FileNotFoundError cai num placeholder generico no slot."""
+    """Como img_icone, mas pros icones de item (ficha/icones/itens/,
+    ver ITENS_CONFIG em itens_config.py). Se o arquivo referenciado nao
+    existir (ex: slot novo em ITENS_CONFIG sem icone criado ainda), cai
+    num placeholder generico no lugar de quebrar com FileNotFoundError."""
     if not os.path.isfile(os.path.join(ICONES_DIR, caminho)):
         def render_placeholder(cx, cy, cor, furo):
             r = tamanho * 0.28
@@ -379,34 +385,32 @@ def img_icone_item(caminho, tamanho):
 
 
 
-# classe agora nao vem mais da linguagem principal (por isso o guerreiro
-# nao carrega mais titulo de "encantador de serpentes"): vem de qual
-# atributo (somado ao vital que ele sustenta, onde existir) mais se
-# destaca. cada chave: titulo, complemento e icone proprios.
-# o arquivo (nao um icone(cx,cy,cor,furo) ja pronto) porque a classe
-# ilustra tanto o retrato pequeno no banner quanto o "boneco" de fundo,
-# grande, atras do equipamento - dois tamanhos, mesmo desenho
+# A classe e decidida pelo atributo (ou par de atributos) que mais se
+# destaca no orcamento de pontos, nao pela linguagem principal do usuario.
+# CLASSES_CONFIG guarda, por classe: titulo, complemento e o caminho do
+# arquivo de icone (nao um icone(cx,cy,cor,furo) ja construido), porque
+# a mesma arte e usada em dois tamanhos: retrato pequeno no banner e
+# boneco grande atras do equipamento.
 def determinar_classe(pontos_ficha, minimo=DISTRIBUICAO_CONFIG["minimo_para_classe"]):
-    """Le CLASSES_CONFIG (classes_config.py) pra decidir a classe. Uma
-    classe qualifica se TODOS os atributos do seu 'requisito' baterem o
-    minimo - igual ao pre-requisito real de multiclasse do D&D 5e (o
-    Patrulheiro exige Destreza E Sabedoria juntos, nao um ou outro).
-    'pontos_ficha' e o orcamento de pontos que soma ao nivel
-    (distribuir_pontos), nao a escala crua - em nivel 1-2 o orcamento e
-    pequeno demais pra bater o minimo em qualquer atributo, e quem nao se
-    qualifica em nenhuma classe cai na classe de requisito vazio
-    (Aventureiro): o "ainda nao se especializou".
+    """Decide a classe a partir de CLASSES_CONFIG (classes_config.py).
+    Uma classe qualifica se todos os atributos do seu `requisito`
+    atingirem `minimo` - mesmo criterio do pre-requisito de multiclasse
+    do D&D 5e (ex: o Patrulheiro exige Destreza E Sabedoria juntas, nao
+    uma ou outra). `pontos_ficha` e o orcamento de pontos ja distribuido
+    (distribuir_pontos), nao a escala bruta: em nivel 1-2 o orcamento
+    costuma ser pequeno demais pra atingir o minimo em qualquer atributo,
+    e nenhuma classe qualifica - cai no fallback de requisito vazio
+    (Aventureiro).
 
     O score de cada classe qualificada e o MINIMO entre os atributos do
-    seu requisito, nao a soma - soma deixava classe de requisito duplo
-    artificialmente mais forte que qualquer classe de requisito simples
-    (2o+3o lugar do ranking somados batia o 1o lugar sozinho), mesmo sem
-    ela ser de fato a mais especializada nos dois.
+    seu requisito, nao a soma: somar inflava artificialmente classes de
+    requisito duplo em relacao as de requisito simples, mesmo quando a
+    classe dupla nao era de fato mais especializada nos dois atributos.
 
     Quando o requisito de uma classe e subconjunto estrito do requisito
     de outra classe tambem qualificada (ex: Ladino=[Destreza] e
     Arqueiro=[Destreza,Sabedoria]), a mais especifica (Arqueiro) sempre
-    vence, mesmo com score igual ou menor - ela "absorve" a mais generica."""
+    vence, mesmo com score igual ou menor."""
     qualificados = []
     for classe, cfg in CLASSES_CONFIG.items():
         requisito = cfg["requisito"]
@@ -435,11 +439,11 @@ def svg_cabecalho(y, titulo, icone, gold, x0=16, largura=848):
     )
 
 
-# tiers de ranqueado, do mais baixo ao mais alto - cada um com cor propria
-# TIERS, SEM_TIER e CONQUISTAS vem de conquistas_config.py. Icones sao so
-# o caminho (string) la, porque img_icone() precisa de ICONES_DIR (so
-# existe aqui) - por isso cada entrada vira icone de verdade so aqui,
-# na hora de montar a lista (ver lista_conquistas() abaixo).
+# TIERS (do mais baixo ao mais alto, cada um com cor propria), SEM_TIER e
+# CONQUISTAS vem de conquistas_config.py. La, cada conquista guarda so o
+# caminho do icone (string): a conversao pra icone renderizavel acontece
+# aqui, em lista_conquistas(), porque img_icone() depende de ICONES_DIR,
+# definido neste modulo.
 
 
 def tier_de(valor, limiares):
@@ -568,14 +572,14 @@ def svg_item_slot(cx, cy, w, nome, icone_render, v):
 
 
 def svg_equipamento(d, v, icone_classe_fundo, classe_chave):
-    """Duas secoes lado a lado: EQUIPAMENTO - um boneco em cruz (elmo,
-    arma, armadura, arma, bota) com o icone da classe atual desenhado
-    atras, meio transparente, e cada slot preenchido pelo set de item da
-    classe (ver ITENS_CONFIG em itens_config.py - icones so locais, nao
-    vao pro repo publico, ver .gitignore). As armas levam o nome gerado
-    "{nome_base} de {linguagem}", usando a linguagem dos repos fixados no
-    perfil (equipar de verdade = dar pin no GitHub) - e HABILIDADES
-    (linguagem = skill, nivel = % dos repos, dado real)."""
+    """Monta duas secoes lado a lado: EQUIPAMENTO (boneco em cruz - elmo,
+    arma principal, armadura, arma secundaria, bota - com o icone da
+    classe atual ao fundo, em baixa opacidade, e cada slot preenchido
+    pelo set de item da classe definido em ITENS_CONFIG, itens_config.py)
+    e HABILIDADES (linguagens do usuario, com nivel proporcional ao % de
+    repositorios). O nome de cada arma segue o padrao "{nome_base} de
+    {linguagem}", onde a linguagem vem do repositorio fixado (pinned) no
+    perfil do GitHub naquele slot."""
     x_hab = 452
     largura_col = 396
     out = []
@@ -678,14 +682,15 @@ def svg_icone_missao(x, y, concluida):
 
 
 def svg_missoes(d, v):
-    # concluidas primeiro, depois em andamento; alfabetico dentro de cada grupo
+    # Ordena concluidas primeiro, depois em andamento; alfabetico dentro
+    # de cada grupo.
     missoes = sorted(d["missoes"], key=lambda r: (not r["tem_url"], nome_missao(r["nome"]).lower()))
     out = []
     for i, r in enumerate(missoes):
         y = MISSOES_Y0 + i * MISSOES_ROW_H
         concluida = r["tem_url"]
-        # linha concluida usa uma cor so em todas as colunas (dourado);
-        # em andamento usa a paleta neutra padrao
+        # Missao concluida usa uma unica cor (dourado) em todas as
+        # colunas; em andamento usa a paleta neutra padrao.
         cor_forte = v["GOLD"] if concluida else v["VELLUM"]
         cor_fraca = v["GOLD"] if concluida else v["DIM"]
         out.append(svg_icone_missao(16, y, concluida))
@@ -738,16 +743,16 @@ def montar_svg(d):
     attrs = atributos(d)
     pontos = {nome: valor for nome, valor, _ in attrs}
 
-    # pontos exibidos na ficha somam nivel + bonus inicial (igual RPG de
-    # mesa classico: todo personagem comeca com um punhado de pontos
-    # livres de criacao, antes de qualquer nivel - ver Attributes.
-    # CREATION_FREE_POINTS=10 no projeto "The Tower"). Vitais abaixo
-    # continuam na escala crua (pontos), que ja é a mesma pra qualquer
-    # nivel - mas a classe agora usa esse orcamento (pontos_ficha),
-    # porque o requisito de classe (ver determinar_classe) e sobre
-    # quanto voce investiu, nao sobre o sinal bruto - em nivel baixo o
-    # orcamento (mesmo com o bonus) pode ainda ser pequeno demais pra
-    # qualificar em qualquer classe, e cai em Aventureiro de proposito.
+    # O orcamento de pontos exibido na ficha soma nivel + bonus inicial
+    # (DISTRIBUICAO_CONFIG["bonus_inicial"]) - mesmo principio de RPGs de
+    # mesa, onde todo personagem comeca com pontos livres de criacao antes
+    # de qualquer nivel. Os vitais (vida/vigor/mana) usam a escala bruta
+    # do atributo (pontos), constante pra qualquer nivel; ja a classe
+    # (determinar_classe) usa esse orcamento distribuido (pontos_ficha),
+    # porque o requisito de classe reflete quanto foi investido naquele
+    # atributo, nao o sinal bruto. Em nivel baixo, o orcamento (mesmo com
+    # o bonus) pode ser pequeno demais pra atingir o minimo em qualquer
+    # atributo, caindo no fallback Aventureiro de forma intencional.
     pontos_ficha = distribuir_pontos(pontos, d["nivel"] + DISTRIBUICAO_CONFIG["bonus_inicial"])
 
     # classe vem do atributo (as vezes dois, ver determinar_classe) que
@@ -759,16 +764,14 @@ def montar_svg(d):
     icone_classe = img_icone(arquivo_classe, 64)
     icone_classe_fundo = img_icone(arquivo_classe, 170)
 
-    # vida/vigor/mana no molde classico de RPG, igual ao projeto "The
-    # Tower" (eldrin/characters/classes.py + character.py): base +
-    # crescimento por nivel, mais o atributo que alimenta aquele vital
-    # vezes 0.6. Cada classe tem sua propria tabela nos 3 vitais (ver
-    # CLASSES_CONFIG), entao guerreiro e mago nao convergem pro mesmo
-    # numero so porque tem o mesmo nivel. Atual = maximo sempre: a ficha
-    # retrata o personagem em pleno vigor (full), nao um estado de
-    # "gastou X de Y" no meio de uma missao.
-    # atributo bruto agora e escala 0-100 (era 0-30) - 0.6 em vez do 2
-    # antigo mantem a mesma contribuicao maxima de antes (30*2 = 100*0.6)
+    # Vida/vigor/mana seguem o molde classico de RPG: base + crescimento
+    # por nivel + (atributo que alimenta aquele vital x 0.6). O fator 0.6
+    # (em vez de 2) compensa a mudanca da escala de atributo de 0-30 para
+    # 0-100, mantendo a mesma contribuicao maxima (30*2 = 100*0.6). Cada
+    # classe tem sua propria tabela de base/crescimento/atributo por vital
+    # (CLASSES_CONFIG), entao Guerreiro e Mago nao convergem pro mesmo
+    # numero so por terem o mesmo nivel. Atual sempre igual ao maximo: a
+    # ficha retrata o personagem em pleno vigor, nao em meio a uma missao.
     vida_max = cfg["vida_base"] + cfg["vida_por_nivel"] * (d["nivel"] - 1) + pontos["Constituição"] * 0.6
     vigor_max = cfg["vigor_base"] + cfg["vigor_por_nivel"] * (d["nivel"] - 1) + pontos[cfg["vigor_attr"]] * 0.6
     mana_max = cfg["mana_base"] + cfg["mana_por_nivel"] * (d["nivel"] - 1) + pontos[cfg["mana_attr"]] * 0.6
