@@ -52,6 +52,7 @@ query($login: String!) {
       nodes {
         name pushedAt isPrivate stargazerCount homepageUrl description
         primaryLanguage { name }
+        diskUsage
         languages(first: 10, orderBy: {field: SIZE, direction: DESC}) {
           edges { size node { name } }
         }
@@ -109,6 +110,7 @@ def buscar(login):
             "estrelas": r["stargazerCount"], "tem_url": bool(r["homepageUrl"]),
             "descricao": r["description"],
             "ling": (r["primaryLanguage"] or {}).get("name"),
+            "tamanho_kb": r["diskUsage"] or 0,
             "linguagens_bytes": [
                 {"nome": e["node"]["name"], "bytes": e["size"]} for e in r["languages"]["edges"]
             ],
@@ -262,17 +264,19 @@ def derivar(d):
     anos = dias(d["criado"]) / 365.25
     missoes = selecionar_missoes(repos, d["login"])
 
-    # linguagem por contagem de repos onde aparece como principal (usado
-    # pela Inteligencia e pelas barras de Habilidades). O bonus de XP por
-    # linguagem (abaixo) usa o dado por repo (linguagens_bytes), que e
-    # mais granular - exige token com permissao de leitura de conteudo.
-    contagem = {}
+    # linguagem principal de cada repo, pesada pelo tamanho (diskUsage,
+    # em KB) dos repos onde ela domina - nao so contagem de repos, que
+    # empatava fácil (duas linguagens com o mesmo numero de repos ficavam
+    # na ordem em que o git retornou, nao por relevancia de verdade).
+    # diskUsage e metadata simples, nao exige a permissao de conteudo que
+    # linguagens_bytes (usado so no bonus de XP) precisa.
+    tamanho_por_lingua = {}
     for r in repos:
         if r["ling"]:
-            contagem[r["ling"]] = contagem.get(r["ling"], 0) + 1
-    total = sum(contagem.values()) or 1
-    lings = sorted(({"nome": k, "n": v, "fatia": v / total} for k, v in contagem.items()),
-                   key=lambda x: -x["n"])
+            tamanho_por_lingua[r["ling"]] = tamanho_por_lingua.get(r["ling"], 0) + r["tamanho_kb"]
+    total_kb = sum(tamanho_por_lingua.values()) or 1
+    lings = sorted(({"nome": k, "kb": v, "fatia": v / total_kb} for k, v in tamanho_por_lingua.items()),
+                   key=lambda x: -x["kb"])
 
     # media de contribuicoes por repo que voce mantem - nao e o commit
     # daquele repo especifico (isso exigiria permissao de leitura de
@@ -431,6 +435,17 @@ def formatar(n):
     return f"{n:.1f}" if isinstance(n, float) else str(round(n))
 
 
+def formatar_compacto(n):
+    """1 em kk (milhao, 'mil de mil'), k (mil) ou cru - 1_200_000 -> '1.2kk',
+    1_200 -> '1.2k', 450 -> '450'. Tira o ".0" quando o resultado e redondo
+    (1_000_000 -> '1kk', nao '1.0kk')."""
+    for divisor, sufixo in ((1_000_000, "kk"), (1_000, "k")):
+        if n >= divisor:
+            texto = f"{n / divisor:.1f}".rstrip("0").rstrip(".")
+            return f"{texto}{sufixo}"
+    return str(round(n))
+
+
 def progresso(valor, tier_idx, limiares):
     """Fracao (0-1) e rotulo tipo '14/18' do avanco dentro do tier atual."""
     if tier_idx >= len(limiares) - 1:
@@ -579,7 +594,7 @@ def svg_equipamento(d, v, icone_classe_fundo):
                 f'<rect x="{x_hab}" y="{y - 9}" width="10" height="10" fill="{cor}"/>'
                 f'<text x="{x_hab + 16}" y="{y}" font-size="11.5" fill="{v["VELLUM"]}">{truncar(escapar(l["nome"]), 14)}</text>'
                 f'<text x="{x_hab + largura_col}" y="{y}" font-size="11" font-weight="bold" text-anchor="end" '
-                f'fill="{v["GOLD"]}">{round(l["fatia"] * 100)}%</text>'
+                f'fill="{v["GOLD"]}">{formatar_compacto(l["kb"])}</text>'
                 f'<rect x="{x_hab + 16}" y="{y + 4}" width="{barra_w}" height="3" fill="{v["DARK"]}"/>'
                 f'<rect x="{x_hab + 16}" y="{y + 4}" width="{barra_w * l["fatia"]:.0f}" height="3" fill="{cor}"/>'
             )
