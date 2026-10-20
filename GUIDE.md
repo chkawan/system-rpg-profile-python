@@ -205,7 +205,7 @@ Tudo em `scripts/gerar_ficha.py`, por nome:
 |---|---|
 | Quanto XP vale cada coisa | constantes dentro de `derivar()`: `MULT_XP`, `TETO_COMMITS_POR_PROJETO`, `MIN_BYTES_LINGUAGEM`, e os números fixos (100/25/100/10) na linha do `xp =` |
 | Custo de nível | `XP_BASE`, `XP_MULTIPLICADOR` |
-| Fonte/peso/teto de cada atributo | `atributos()` |
+| Fonte/peso/teto de cada atributo, e a ordem de desempate | `scripts/atributos_config.py` (`ATRIBUTOS_CONFIG`) |
 | Fatia do ranking na distribuição de pontos | `RANKING_FATIAS` |
 | Bônus de pontos de criação | `BONUS_INICIAL` (dentro de `montar_svg()`) |
 | Teto por atributo na distribuição | o parâmetro `maximo` de `distribuir_pontos()` |
