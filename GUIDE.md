@@ -169,7 +169,7 @@ todo personagem recém-criado cai em **Aventureiro** até se especializar.
 ## 6. Vida, Vigor e Mana — como cada classe escala
 
 Cada classe tem sua própria tabela de base + crescimento por nível, em
-`CLASSE_VITAIS`:
+`CLASSES_CONFIG` (`scripts/classes_config.py`):
 
 ```
 vida_max  = vida_base  + vida_por_nivel  × (nível − 1) + Constituição × 0.6
@@ -209,9 +209,7 @@ Tudo em `scripts/gerar_ficha.py`, por nome:
 | Fatia do ranking na distribuição de pontos | `RANKING_FATIAS` |
 | Bônus de pontos de criação | `BONUS_INICIAL` (dentro de `montar_svg()`) |
 | Teto por atributo na distribuição | o parâmetro `maximo` de `distribuir_pontos()` |
-| Requisito de cada classe | `determinar_classe()` |
-| Vida/Vigor/Mana por classe | `CLASSE_VITAIS` |
-| Título e flavor text de cada classe | `CLASSE_TITULOS` |
+| Requisito, Vida/Vigor/Mana, título e flavor text de cada classe | `scripts/classes_config.py` (`CLASSES_CONFIG`) |
 | Bio, antecedentes, juramento (texto que não vem da API) | `BIO_TEXTO`, `BIO_TABELA`, `JURAMENTO_TEXTO` |
 
 Pra instalar o projeto do zero (token, secrets, workflow), veja o
