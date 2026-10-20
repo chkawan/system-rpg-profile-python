@@ -77,13 +77,13 @@ ATRIBUTOS_CONFIG = {
         "fonte": "num_linguagens",
         "rotulo": "linguagens estudadas",
         "mx": 20,
-        "peso": 1.7,
+        "peso": 0.5,
     },
     "Sabedoria": {
         "fonte": "dias_ativos",
         "rotulo": "dias ativos no último ano",
         "mx": 365,
-        "peso": 0.6,
+        "peso": 0.5,
     },
     "Carisma": {
         "fonte": "seguidores",

@@ -21,39 +21,19 @@ from atributos_config import ATRIBUTOS_CONFIG, DISTRIBUICAO_CONFIG
 from classes_config import CLASSES_CONFIG
 from xp_config import XP_CONFIG, NIVEL_CONFIG
 from conquistas_config import TIERS, SEM_TIER, CONQUISTAS
+from cores_config import CORES
+from perfil_config import BIO_TEXTO, BIO_TABELA, JURAMENTO_TEXTO
 
 LOGIN = os.environ.get("FICHA_LOGIN")
 TOKEN = os.environ.get("GH_TOKEN", "")
 README = os.path.join(os.path.dirname(__file__), "..", "README.md")
 ICONES_DIR = os.path.join(os.path.dirname(__file__), "..", "ficha", "icones")
 
-CORES = {
-    "Python": "3572A5", "PHP": "4F5D95", "JavaScript": "f1e05a",
-    "TypeScript": "3178c6", "HTML": "e34c26", "CSS": "563d7c", "Shell": "89e051",
-}
-
 # armaduras: ferramentas/plataformas do dia a dia - curado a mao porque a
 # API do GitHub nao da esse nivel de detalhe (framework, nuvem, BI...),
-# diferente de habilidades (linguagem), que vem direto dos repos
-# conteudo estatico do "Pergaminho do aventureiro" e do "Grimorio" - nao vem
-# da API do GitHub, e o texto de bio/skills que edita direto aqui.
-BIO_TEXTO = (
-    "Back-end com foco em dados e sistemas que aguentam carga. Construo de ponta a ponta: "
-    "modelagem, API REST, deploy e o painel que alguém vai abrir de manhã. Antes de escrever "
-    "código, pergunto que decisão o dado precisa sustentar."
-)
-BIO_TABELA = [
-    ("Origem", "Rio de Janeiro, BR"),
-    ("Escola", "Back-end, dados e automação"),
-    ("Campo de batalha", "Sistemas completos, do banco à tela"),
-    ("Marca registrada", "Deploy em cloud e domínio próprio por projeto"),
-]
-
-# texto do "Juramento" - veio da secao homonima que existia solta no README
-JURAMENTO_TEXTO = (
-    "Atuar como desenvolvedor back-end construindo soluções orientadas a dados, "
-    "com foco em performance, escalabilidade e impacto real no negócio."
-)
+# diferente de habilidades (linguagem), que vem direto dos repos.
+# conteudo estatico do "Pergaminho do aventureiro" e do "Juramento" vem de
+# perfil_config.py - nao vem da API do GitHub, e texto que voce edita la.
 
 QUERY = """
 query($login: String!) {
