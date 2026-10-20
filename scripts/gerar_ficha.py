@@ -17,6 +17,8 @@ import sys
 import textwrap
 from datetime import datetime, timezone
 
+from atributos_config import ATRIBUTOS_CONFIG
+
 LOGIN = os.environ.get("FICHA_LOGIN")
 TOKEN = os.environ.get("GH_TOKEN", "")
 README = os.path.join(os.path.dirname(__file__), "..", "README.md")
@@ -325,40 +327,31 @@ def derivar(d):
     nivel = nivel_de_xp(xp)
     return {**d, "selados": selados, "estrelas": estrelas,
             "com_url": com_url, "total_repos": total_repos,
-            "anos": anos, "lings": lings,
+            "anos": anos, "lings": lings, "num_linguagens": len(lings),
             "media_commits_repo": media_commits_repo, "xp": xp,
             "missoes": missoes, "nivel": nivel,
             "pinned": d.get("pinned", [])[:5]}
 
 
 def atributos(d):
-    # cada atributo fisico/mental do RPG mapeado pro sinal de programacao
-    # mais parecido com o que ele mede na mesa: forca e musculo (volume
-    # erguido), destreza e reflexo (velocidade de reacao, aqui medida por
-    # quanto voce contribui em media por repositorio que mantem - repo
-    # criado e abandonado puxa a media pra baixo), constituicao e folego
-    # (tempo aguentando o ritmo),
-    # inteligencia e estudo (repertorio de linguagens), sabedoria e
-    # disciplina/forca de vontade (dias ativos no calendario, nao total de
-    # commits - commit e alta frequencia e infla facil, aparecer com
-    # regularidade e o sinal de disciplina de verdade) e carisma e
-    # presenca social (quem te segue).
-    # peso de cada um = o quanto ele pesa de verdade numa carreira dev. Um
-    # peso de 0.5-1.6 nao bastava: os brutos (antes do peso) ficam todos
-    # entre 0.6-0.75 (o log comprime demais), entao so um peso bem mais
-    # extremo nas pontas (0.3 a 1.8) separa de verdade. Carisma ganhou
-    # teto maior + peso baixo pra 1000 seguidores nao virar nota maxima
-    # sem nenhum sinal tecnico por tras.
-    return [
-        ("Força", escala(d["total_repos"], 200, peso=0.8),
-         f'{d["total_repos"]} repositórios erguidos'),
-        ("Destreza", escala(d["media_commits_repo"], 50, peso=0.4),
-         f'{d["media_commits_repo"]:.1f} commits por repositório em média'),
-        ("Constituição", escala(d["anos"], 15, peso=1.0), f'{d["anos"]:.1f} anos de estrada sem parar'),
-        ("Inteligência", escala(len(d["lings"]), 20, peso=1.3), f'{len(d["lings"])} linguagens estudadas'),
-        ("Sabedoria", escala(d["dias_ativos"], 365, peso=1.2), f'{d["dias_ativos"]} dias ativos no último ano'),
-        ("Carisma", escala(d["seguidores"], 6000, peso=0.3), f'{d["seguidores"]} seguidores no reino'),
-    ]
+    """Le a configuracao de atributos_config.py e calcula cada um - fonte,
+    teto (mx) e peso vem de la, nao daqui. Pra reorganizar de onde um
+    atributo tira o numero (ou o peso/teto dele), edite ATRIBUTOS_CONFIG
+    em scripts/atributos_config.py, nao este arquivo."""
+    resultado = []
+    for nome, cfg in ATRIBUTOS_CONFIG.items():
+        fonte = cfg["fonte"]
+        if fonte not in d:
+            raise SystemExit(
+                f"atributos_config.py: '{nome}' aponta pra fonte '{fonte}', que nao existe "
+                f"nos dados derivados. Fontes disponiveis: {', '.join(sorted(d))}"
+            )
+        valor_bruto = d[fonte]
+        pontos = escala(valor_bruto, cfg["mx"], peso=cfg["peso"])
+        texto_valor = f"{valor_bruto:.1f}" if isinstance(valor_bruto, float) else str(valor_bruto)
+        porque = f'{texto_valor} {cfg["rotulo"]}'
+        resultado.append((nome, pontos, porque))
+    return resultado
 
 
 # ------------------------------------------------------------- iconografia
